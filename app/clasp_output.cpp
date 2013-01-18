@@ -839,6 +839,7 @@ void JsonOutput::printLemmaStats(const SolveStats& st) {
 	printKeyValue("AvgConflict", average(st.lits[0], st.learnts[0]));
 	printKeyValue("AvgLoop", average(st.lits[1], st.learnts[1]));
 	printKeyValue("AvgOther", average(st.lits[2], st.learnts[2]));
+	printKeyValue("PBC", average(st.lits[3], st.learnts[3]));
 	endObject();
 }
 
