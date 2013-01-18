@@ -306,12 +306,12 @@ void SearchOptions::initOptions(ProgramOptions::OptionContext& root) {
 		 "Configure watched literal initialization [%D]\n"
 		 "      Watch {0=first|1=random|2=least watched} literals in nogoods")
 		("seed"    , notify(this, &SearchOptions::mapSolverOpts)->arg("<n>"),"Set random number generator's seed to %A\n")
-        ("analyze" , notify(this, &SearchOptions::mapSolverOpts)->defaultsTo("res"),
-                    "Configure conflict analysis algorithm\n"
-                    "      Default: res\n"
-                    "      Valid: res, cp\n"
-                    "        res   : run standard resolution driven conflict analysis\n"
-                    "        cp    : run cutting planes conflict analysis")
+		("analyze" , notify(this, &SearchOptions::mapSolverOpts)->defaultsTo("res"),
+					"Configure conflict analysis algorithm\n"
+					"      Default: res\n"
+					"      Valid: res, cp\n"
+					"        res   : run standard resolution driven conflict analysis\n"
+					"        cp    : run cutting planes conflict analysis")
 		("lookahead!"     ,notify(this, &SearchOptions::mapSolverOpts)->implicit("atom"),
 		 "Configure failed-literal detection (fld)\n"
 		 "      %A: <type>[,<n {1..umax}>] / Implicit: %I\n"
@@ -420,9 +420,9 @@ const EnumMap SearchOptions::heuTypes[] = {
 	{"none", ClaspConfig::heu_none}, {0,0}
 };
 const EnumMap SearchOptions::analyzeTypes[] = {
-    {"res", SolverStrategies::res_learning},
-    {"cp", SolverStrategies::cp_learning},
-    {0,0}
+	{"res", SolverStrategies::res_learning},
+	{"cp", SolverStrategies::cp_learning},
+	{0,0}
 };
 const EnumMap SearchOptions::loopTypes[] = {
 	{"common", DefaultUnfoundedCheck::common_reason}, {"shared", DefaultUnfoundedCheck::shared_reason},
@@ -532,7 +532,7 @@ bool SearchOptions::mapSolverOpts(SearchOptions* this_, const std::string& n, co
 	else if (n == "update-lbd")    { return parse(v, x) && SET(opts->updateLbd, x);    }
 	else if (n == "update-act")    { return FlagStr::store_true(v, b) && SET(opts->bumpVarAct, (uint32)b); }
 	else if (n == "no-lookback")   { return FlagStr::store_true(v, b) && SET(opts->search, (uint32)b); }
-    else if (n == "analyze")       { return mapEnum<analyzeTypes>(v,x) && SET(opts->analyze, x); }
+	else if (n == "analyze")       { return mapEnum<analyzeTypes>(v,x) && SET(opts->analyze, x); }
 	else if (n == "contraction")   { return ((x = (v!="no")) == 0 || parse(v, x)) && SET(opts->compress, x); }
 	else if (n == "seed")          { b = parse(v, x); opts->rng.srand(x); return b; }
 	else if (n == "loops")         { int i; return mapEnumImpl(loopTypes, v, i) && SET(opts->loopRep, (uint32)i); }

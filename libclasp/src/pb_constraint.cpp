@@ -68,13 +68,13 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 	else {
 		// This could be a clause, or about anything else...
 		// Let's just use the reason it provides and build a PB constraint from that
-        LitVec reasons;
-        ant.reason(s, p, reasons);
+		LitVec reasons;
+		ant.reason(s, p, reasons);
 
 		slack_= -1;
 		lits_.push_back(WeightLiteral(p, 1));
-        for(LitVec::size_type i= 0; i != reasons.size(); ++i){
-            lits_.push_back(WeightLiteral(~reasons[i],1));
+		for(LitVec::size_type i= 0; i != reasons.size(); ++i){
+			lits_.push_back(WeightLiteral(~reasons[i],1));
 			if(s.isTrue(lit(i))) ++slack_;
 		}
 	}
@@ -114,7 +114,7 @@ bool PBConstraint::integrate(Solver& s) {
 
 	for (LitVec::size_type i= 0; i < lits_.size(); ++i){
 		slack_+= lits_[i].second;
-        addWatch(s, i);
+		addWatch(s, i);
 		if (s.isFalse(lit(i))) {
 			undo_[todo++]= UndoInfo(i<<1);
 		}
@@ -163,16 +163,16 @@ namespace {
 			else       y-= x;
 		}
 		return x;
-    };
+	};
 }
 
 void PBConstraint::varElimination(Solver& s, Literal l){
-    // TODO: was soll das hier?
+	// TODO: was soll das hier?
 	assert( undo_ == 0 && "the constraint is not integrated into a solver yet");
 	assert( weight(~l) > 0 && "can't eliminate non-existing literal");
 	assert( slack_ < 0 && "the constraint should be violated");
 
-    PBConstraint eliminator(s, l, s.reason(l));
+	PBConstraint eliminator(s, l, s.reason(l));
 
 	weight_t mel= eliminator.weight(l);
 	weight_t mag= weight(~l);
@@ -182,8 +182,8 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 	mag= mag/mgcd;
 
 	if ( (bound_ > static_cast<wsum_t>(UINT64_MAX >> 2)/mel )       ||
-	     (slack_ < (std::numeric_limits<wsum_t>::min() / mel) / 2)  ||
-	     (static_cast<wsum_t>(lits_[0].second)*mel > static_cast<wsum_t>(UINT32_MAX >> 2) )){
+		 (slack_ < (std::numeric_limits<wsum_t>::min() / mel) / 2)  ||
+		 (static_cast<wsum_t>(lits_[0].second)*mel > static_cast<wsum_t>(UINT32_MAX >> 2) )){
 		// we can't guarantee that the added values do not overflow!
 		// this is a really crude version of overflow handling
 		weaken(s);
@@ -191,8 +191,8 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 		mel= eliminator.weight(l);
 	}
 	if ((eliminator.bound_ > static_cast<wsum_t>(UINT64_MAX >> 2)/mag )  ||
-	    (slack_ > (std::numeric_limits<wsum_t>::max() / mag) >> 1)       ||
-	    (static_cast<wsum_t>(eliminator.lits_[0].second)*mag > static_cast<wsum_t>(UINT32_MAX >> 2) )){
+		(slack_ > (std::numeric_limits<wsum_t>::max() / mag) >> 1)       ||
+		(static_cast<wsum_t>(eliminator.lits_[0].second)*mag > static_cast<wsum_t>(UINT32_MAX >> 2) )){
 		eliminator.weaken(s,l);
 		mel= 1;
 		mag= weight(~l);
@@ -210,9 +210,9 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 	assert( mult );
 
 	// this might be overestimated and is adjusted via canonicalize
-    slack_+= eliminator.slack_;
+	slack_+= eliminator.slack_;
 
-    bound_+= eliminator.bound_;
+	bound_+= eliminator.bound_;
 
 	// add up literals and adjust slack as needed
 	lits_.insert(lits_.end(), eliminator.lits_.begin(), eliminator.lits_.end());
@@ -426,31 +426,31 @@ inline uint32 PBConstraint::highestUndoLevel(Solver& s) const {
 }
 
 bool PBConstraint::locked(const Solver& s) const {
-    return firstImpl_ <= s.decisionLevel();
+	return firstImpl_ <= s.decisionLevel();
 }
 
 uint32 PBConstraint::isOpen(const Solver &s, const TypeSet &t, LitVec &freeLits)
 {
-    if (!t.inSet(PBConstraint::type())) {
-        return 0;
-    }
-    LitVec tmpl;
-    int32 sum= 0;
-    for(LitVec::size_type i= 0; i != size(); ++i){
-        // litSeen(i) means it's false
-        if(!litSeen(i)){
-            if( s.isTrue(lit(i)) ){
-                sum+= weight(i);
-                if( sum >= bound_ )	return 0;
-            }
-            else {
-                assert( s.value(lit(i).var()) == value_free );
-                tmpl.push_back( lit(i) );
-            }
-        }
-    }
-    freeLits= tmpl;
-    return PBConstraint::type();
+	if (!t.inSet(PBConstraint::type())) {
+		return 0;
+	}
+	LitVec tmpl;
+	int32 sum= 0;
+	for(LitVec::size_type i= 0; i != size(); ++i){
+		// litSeen(i) means it's false
+		if(!litSeen(i)){
+			if( s.isTrue(lit(i)) ){
+				sum+= weight(i);
+				if( sum >= bound_ )	return 0;
+			}
+			else {
+				assert( s.value(lit(i).var()) == value_free );
+				tmpl.push_back( lit(i) );
+			}
+		}
+	}
+	freeLits= tmpl;
+	return PBConstraint::type();
 }
 
 bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
