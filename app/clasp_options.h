@@ -89,6 +89,7 @@ struct SearchOptions {
 	SolverConfig*      local;
 	SolverStrategies*  solverOpts() const;
 	uint32             enabledDel;
+    static const EnumMap analyzeTypes[];
 	static const EnumMap heuTypes[];
 	static const EnumMap lookTypes[];
 	static const EnumMap loopTypes[];

@@ -145,6 +145,11 @@ struct SolverStrategies {
 		use_learning = 0, /*!< Analyze conflicts and learn First-1-UIP-clause */
 		no_learning  = 1  /*!< Don't analyze conflicts - chronological backtracking */
 	};
+    //! Analyze algorithm to use
+    enum AnalyseStrategy {
+        res_learning = 0, /*!< Analyze conflicts using resolution and the First-UIP scheme */
+        cp_learning = 1 /*!< Analyze conflicts using cutting planes and learn PB-Constraint & 1UIP-clause */
+    };
 	//! Antecedents to consider during conflict clause minimization.
 	enum CCMinAntes {
 		no_antes     = 0,  /*!< Don't minimize first-uip-clauses. */
@@ -189,6 +194,7 @@ struct SolverStrategies {
 	uint32    bumpVarAct   :  1;   /*!< Bump activities of vars implied by learnt clauses with small lbd. */
 	uint32    strRecursive :  1;   /*!< If 1, use more expensive recursive nogood minimization. */
 	uint32    search       :  1;   /*!< Current search strategy. */
+    uint32    analyze      :  1;   /*!< Current conflict analysis strategy. */
 };
 
 }

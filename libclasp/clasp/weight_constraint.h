@@ -34,6 +34,7 @@ struct SharedWeightLits;
 } // namespace mt
 
 class WeightConstraint;
+class PBConstraint;
 
 //! Class storing a set of literals optionally associated with weights.
 class WeightLits {
@@ -137,6 +138,8 @@ public:
 	uint32   size()                            const { return lits_->size();    }
 	//! Returns false if constraint is a cardinality constraint.
 	bool     isWeight()                        const { return lits_->hasWeights();}
+    //! Return active PBC removing all unrelevant (lev0) literals except p
+    void     extractActivePB(const Solver& s, WeightLitVec& lits, wsum_t& bound, wsum_t& slack, Literal p) const;
 private:
 	WeightConstraint(SharedContext& ctx, Literal W, const WeightLitVec& lits, uint32 bound, uint32 sumW, WL* out);
 	WeightConstraint(Solver& s, const WeightConstraint& other);
@@ -181,6 +184,8 @@ private:
 	uint32   active_ :  2; // which of the two sub-constraints is currently unit?
 	weight_t bound_[2];    // FFB_BTB: (sumW-bound)+1 / FTB_BFB: bound
 	UndoInfo undo_[0];     // undo stack + seen flag for each literal
+
+    friend class PBConstraint;
 };
 }
 

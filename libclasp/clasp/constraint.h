@@ -52,7 +52,8 @@ struct Constraint_t {
 		learnt_conflict   = 1, /**< a (removable) constraint derived from conflict analysis      */
 		learnt_loop       = 2, /**< a (removable) constraint derived from unfounded set checking */
 		learnt_other      = 3, /**< a (removable) constraint learnt by some other means          */
-		max_value         = learnt_other
+        learnt_pb         = 4, /**< a (removable) constraint derived from cutting planes analysis*/
+        max_value         = learnt_pb
 	};
 	struct Set {
 		Set() : m(0) {}

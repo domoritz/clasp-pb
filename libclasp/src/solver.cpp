@@ -19,6 +19,7 @@
 //
 #include <clasp/solver.h>
 #include <clasp/clause.h>
+#include <clasp/pb_constraint.h>
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4996) // 'std::copy': Function call with parameters that may be unsafe
@@ -170,7 +171,7 @@ bool Solver::PPList::isModel(Solver& s) const {
 // SolverStrategies
 /////////////////////////////////////////////////////////////////////////////////////////
 SolverStrategies::SolverStrategies() {
-	struct X { RNG y; uint32 z[3]; };
+    struct X { RNG y; uint32 z[3]; };
 	static_assert(sizeof(SolverStrategies) == sizeof(X), "Unsupported Padding");
 	std::memset(&compress, 0, 3*sizeof(uint32));
 	ccMinAntes = all_antes;
@@ -182,6 +183,7 @@ SolverStrategies::HeuFactory SolverStrategies::heuFactory_s = 0;
 ////////////////////////////////////////////////////////////////////////////////////////
 Solver::Solver()
 	: strategy_()
+    , aggregator_(0)
 	, ccMin_(0)
 	, smallAlloc_(new SmallClauseAlloc)
 	, shared_(0)
@@ -554,6 +556,10 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 	if (strategy_.search != SolverStrategies::no_learning && !a.isNull()) {
 		if (data == UINT32_MAX) {
 			a.reason(*this, p, conflict_);
+            if(strategy_.analyze) {
+                // save conflicting PBConstraint as well
+                aggregator_= new PBConstraint(*this, p, a, true);
+            }
 		}
 		else {
 			// temporarily replace old data with new data
@@ -561,10 +567,15 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			assign_.setData(p.var(), data);
 			// extract conflict using new data
 			a.reason(*this, p, conflict_);
+            if(strategy_.analyze) {
+                // save conflicting PBConstraint as well
+                aggregator_= new PBConstraint(*this, p, a, true);
+            }
 			// restore old data
 			assign_.setData(p.var(), saved);
 		}
 	}
+    assert( !aggregator_ || aggregator_->slack() < 0 );
 }
 
 bool Solver::assume(const Literal& p) {
@@ -691,7 +702,19 @@ bool Solver::resolveConflict() {
 			uint32 uipLevel = analyzeConflict();
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
 			undoUntil( uipLevel );
-			return ClauseCreator::create(*this, cc_, ccInfo_);
+            PBConstraint* pbRes = aggregator_;
+            aggregator_         = 0;
+            if (pbRes && pbRes->bound() <= 1) {
+                // Subsumed by clause
+                pbRes->destroy(0, false);
+                pbRes = 0;
+            }
+
+#pragma message TODO("This is wrong for model enumeration")
+            if (ClauseCreator::create(*this, cc_, ccInfo_) && (!pbRes || pbRes->integrate(*this))) {
+                return true;
+            }
+            assert( hasConflict() && "pbRes has to throw a conflict" );
 		}
 		else {
 			return backtrack();
@@ -848,6 +871,7 @@ uint32 Solver::analyzeConflict() {
 	cc_.assign(1, p);           // will later be replaced with asserting literal
 	Antecedent lhs, rhs, last;  // resolve operands
 	const bool doOtfs = strategy_.otfs > 0;
+    const bool cpAnalysis = strategy_.analyze;
 	for (bumpAct_.clear();;) {
 		uint32 lhsSize = resSize;
 		uint32 rhsSize = 0;
@@ -889,6 +913,11 @@ uint32 Solver::analyzeConflict() {
 		}
 		--resSize; // p will be resolved out next
 		last = rhs;
+        // an earlier elimination might have removed this already!
+        if (cpAnalysis && aggregator_->weight(~p) > 0){
+            assert(aggregator_ != 0);
+            aggregator_->varElimination(*this, p);
+        }
 		reason(p, conflict_);
 	}
 	cc_[0] = ~p; // store the 1-UIP

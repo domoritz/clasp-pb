@@ -30,6 +30,8 @@
 
 namespace Clasp {
 
+    class PBConstraint;
+
 //! Parameter-Object for controlling search limits.
 struct SearchLimits {
 	explicit SearchLimits(uint64 conf = UINT64_MAX)
@@ -835,7 +837,9 @@ private:
 	LitVec            conflict_;    // stores conflict-literals for later analysis
 	LitVec            cc_;          // temporary: stores conflict clause within analyzeConflict
 	LitVec            temp_;        // temporary: eliminated vars that are unconstraint w.r.t the current model
-	WeightLitVec      bumpAct_;     // temporary: lits from current dl whose activity might get an extra bump
+    PBConstraint*     aggregator_;  // stores PB conflict constraint
+    std::vector<bool> pb_tag_;      // used for canonicalize in cutting planes variable elimination
+    WeightLitVec      bumpAct_;     // temporary: lits from current dl whose activity might get an extra bump
 	DecisionLevels    levels_;      // Stores information (e.g. position in trail) on each decision level
 	VarVec            lbdStamp_;    // temporary vector for computing LBD
 	VarVec            cflStamp_;    // temporary vector for computing number of conflicts in branch
@@ -855,6 +859,8 @@ private:
 	uint32            btLevel_;     // When enumerating models: DL of the last unflipped decision from the current model. Can't backjump below this level.
 	uint32            lbdTime_;     // temporary counter for computing lbd
 	bool              shuffle_;     // shuffle program on next simplify?
+
+    friend class PBConstraint;
 };
 
 inline bool isRevLit(const Solver& s, Literal p, uint32 maxL) {
