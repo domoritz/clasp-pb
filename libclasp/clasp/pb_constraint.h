@@ -101,12 +101,12 @@ public:
 	 */
 	bool locked(const Solver& s) const;
 
-	//! Shall return true if this constraint is satisfied w.r.t the current assignment.
-	/*!
-	 * If this function returns false, freeLits shall contain some (or all) currently
-	 * unassigned literals of this constraint.
-	 */
-    bool isSatisfied(const Solver& s, LitVec& freeLits);
+    //! Shall return 0 if either !t.inSet(type()) or this constraint is satisfied w.r.t the current assignment.
+    /*!
+     * If this constraint is currently not satisfied and t.inSet(type()), shall return type()
+     * and freeLits shall contain all currently unassigned literals of this constraint.
+     */
+    uint32 isOpen(const Solver& s, const TypeSet& t, LitVec& freeLits);
 
 	//! Add *this to learnt constraints of solver and integrate into current search
 	bool integrate(Solver& s);

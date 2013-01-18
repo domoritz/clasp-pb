@@ -426,10 +426,14 @@ inline uint32 PBConstraint::highestUndoLevel(Solver& s) const {
 }
 
 bool PBConstraint::locked(const Solver& s) const {
-	return firstImpl_ <= s.decisionLevel();
+    return firstImpl_ <= s.decisionLevel();
 }
 
-bool PBConstraint::isSatisfied(const Solver& s, LitVec& freeLits) {
+uint32 PBConstraint::isOpen(const Solver &s, const TypeSet &t, LitVec &freeLits)
+{
+    if (!t.inSet(PBConstraint::type())) {
+        return 0;
+    }
     LitVec tmpl;
     int32 sum= 0;
     for(LitVec::size_type i= 0; i != size(); ++i){
@@ -437,7 +441,7 @@ bool PBConstraint::isSatisfied(const Solver& s, LitVec& freeLits) {
         if(!litSeen(i)){
             if( s.isTrue(lit(i)) ){
                 sum+= weight(i);
-                if( sum >= bound_ )	return true;
+                if( sum >= bound_ )	return 0;
             }
             else {
                 assert( s.value(lit(i).var()) == value_free );
@@ -446,7 +450,7 @@ bool PBConstraint::isSatisfied(const Solver& s, LitVec& freeLits) {
         }
     }
     freeLits= tmpl;
-    return false;
+    return PBConstraint::type();
 }
 
 bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
