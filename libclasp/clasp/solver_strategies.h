@@ -184,7 +184,7 @@ struct SolverStrategies {
 	uint32    berkOnce : 1;        /**< Only for Berkmin. */
 	uint32    unitNant : 1;        /**< Only for unit.    */
 	uint32    heuParam :17;        /**< Extra parameter for heuristic with meaning depending on type */
-	uint32    saveProgress : 16;   /*!< Enable progress saving if > 0. */
+    uint32    saveProgress : 15;   /*!< Enable progress saving if > 0. */
 	uint32    loopRep      :  3;   /*!< How to represent loops? */
 	uint32    ccMinAntes   :  2;   /*!< Antecedents to look at during conflict clause minimization. */
 	uint32    reverseArcs  :  2;   /*!< Use "reverse-arcs" during learning if > 0. */
