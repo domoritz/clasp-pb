@@ -286,46 +286,48 @@ Constraint* WeightConstraint::cloneAttach(Solver& other) {
 }
 
 void WeightConstraint::extractActivePB(const Solver& s, WeightLitVec& lits, wsum_t& bound, wsum_t& slack, Literal p) const {
-  assert(active_ != NOT_ACTIVE);
-  ActiveConstraint act = (ActiveConstraint)active_;
-  wsum_t           sum = 0;
-  wsum_t realbound= bound                = bound_[1 - active_];
-  Literal body         = lit(0, act);
-  for (uint32 i = 0; i != size(); ++i) {
-      Literal  x = lit(i, act);
-      weight_t w = weight(i);
+	assert(active_ != NOT_ACTIVE);
+	ActiveConstraint act = (ActiveConstraint)active_;
+	wsum_t sum = 0;
+	wsum_t realbound = bound = bound_[1 - active_];
+	Literal body = lit(0, act);
 
-      if(!s.isFalse(x) || !litSeen(i)) sum   += w;
+	for (uint32 i = 0; i != size(); ++i) {
+		Literal  x = lit(i, act);
+		weight_t w = weight(i);
 
-      if(!s.isFalse(x) && litSeen(i)){
-          bound+= w;
-          realbound+= w;
-      }
+		if(!s.isFalse(x) || !litSeen(i)) sum   += w;
 
-      /*
-      if (litSeen(i) || s.isFalse(x)) {
-        if (s.isFalse(x)) { sum   -= w; }
-        else              { bound += w; }
-      }
-      */
-      if (s.value(x.var()) == value_free || s.level(x.var()) != 0 || x == p) {
-          lits.push_back(WeightLiteral(x, w));
-      }
-      else if (s.isTrue(x)) {
-          bound-= w;
-          sum  -= w;
-      }
-      else if (s.isFalse(x) && !litSeen(i)) {
-          sum  -= w;
-      }
-  }
-  if (s.value(body.var()) == value_free || s.level(body.var()) != 0) {
-      if (!s.isFalse(body)) { sum += (bound - lits[0].second); }
-      lits[0].second = bound;
-  }
+		if(!s.isFalse(x) && litSeen(i)){
+			bound+= w;
+			realbound+= w;
+		}
 
-  slack= sum - bound;
-  //	std::cout << "bound: " << realbound << std::endl;
+		/*
+		if (litSeen(i) || s.isFalse(x)) {
+		if (s.isFalse(x)) { sum   -= w; }
+		else              { bound += w; }
+		}
+		*/
+
+		if (s.value(x.var()) == value_free || s.level(x.var()) != 0 || x == p) {
+			lits.push_back(WeightLiteral(x, w));
+		}
+		else if (s.isTrue(x)) {
+			bound-= w;
+			sum  -= w;
+		}
+		else if (s.isFalse(x) && !litSeen(i)) {
+			sum  -= w;
+		}
+	}
+	if (s.value(body.var()) == value_free || s.level(body.var()) != 0) {
+		if (!s.isFalse(body)) { sum += (bound - lits[0].second); }
+		lits[0].second = bound;
+	}
+
+	slack= sum - bound;
+	//	std::cout << "bound: " << realbound << std::endl;
 }
 
 void WeightConstraint::addWatch(Solver& s, uint32 idx, ActiveConstraint c) {
