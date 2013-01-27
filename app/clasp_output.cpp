@@ -507,6 +507,8 @@ void DefaultOutput::printLemmaStats(const SolveStats& st) const {
 	printf(" (Average Length: %.1f) \n", average(st.lits[1], st.learnts[1]));
 	printKeyValue("  Other", "%-6"PRIu64, st.learnts[2]);
 	printf(" (Average Length: %.1f)\n"  , average(st.lits[2], st.learnts[2]));
+	printKeyValue("  PBC", "%-6"PRIu64, st.learnts[3]);
+	printf(" (Average Length: %.1f) \n", average(st.lits[3], st.learnts[3]));
 	printKeyValue("  Deleted", "%-6"PRIu64"\n", st.deleted);
 }
 
