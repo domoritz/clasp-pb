@@ -1,4 +1,4 @@
-// 
+//
 // Copyright (c) 2012, Dominik Moritz
 // 
 // This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
@@ -38,16 +38,17 @@ namespace Clasp { namespace Test {
 class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST_SUITE(PbConstraintTest);
 	CPPUNIT_TEST(testTrivial);
-	CPPUNIT_TEST(testConstructor);
+	CPPUNIT_TEST(testSimpleConstructor);
 	CPPUNIT_TEST(testSimplePropagation);
+	CPPUNIT_TEST(testExtractionFromWeightConstraint);
+	CPPUNIT_TEST(testConstructionFromConflict);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
 	PbConstraintTest() {
-		body  = posLit(ctx.addVar(Var_t::body_var));
-		a     = posLit(ctx.addVar(Var_t::atom_var));
-		b     = posLit(ctx.addVar(Var_t::atom_var));
-		c     = posLit(ctx.addVar(Var_t::atom_var));
+		a = posLit(ctx.addVar(Var_t::atom_var));
+		b = posLit(ctx.addVar(Var_t::atom_var));
+		c = posLit(ctx.addVar(Var_t::atom_var));
 
 		solver = ctx.master();
 		solver->strategies().analyze = SolverStrategies::res_learning;
@@ -59,23 +60,58 @@ public:
 		CPPUNIT_ASSERT(true);
 	}
 
-	void testConstructor() {
+	void testSimpleConstructor() {
 		PBConstraint::PBConstraint* pbc = createPbConstraint();
 		CPPUNIT_ASSERT(pbc);
-		CPPUNIT_ASSERT_EQUAL(pbc->bound(), static_cast<wsum_t>(3));
+		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
 	}
 
 	void testSimplePropagation() {
 		// a :- b.
 		// b.
+		// c.
 		ctx.addUnary(~b);
+		ctx.addUnary(~c);
 		ctx.addBinary(~a, b);
 		ctx.addBinary(a, ~b);
+
+		CPPUNIT_ASSERT_EQUAL(3U, solver->numVars());
 
 		CPPUNIT_ASSERT(!solver->hasConflict());
 
 		solver->force(b, 0);
 		CPPUNIT_ASSERT(solver->hasConflict());
+
+		CPPUNIT_ASSERT_EQUAL(1ULL, solver->stats.conflicts);
+	}
+
+	void testConstructionFromConflict() {
+		ctx.addUnary(a);
+		ctx.addUnary(~a);
+
+		ctx.endInit();
+
+		solver->assume(a);
+	}
+
+	void testExtractionFromWeightConstraint() {
+		Constraint* c;
+		WeightLitVec lits;
+		wsum_t bound;
+		wsum_t slack;
+
+		WeightLitVec wlits = makeWeightLits();
+
+		ctx.addUnary(a);
+		ctx.endInit();
+		solver->propagate();
+
+		WeightConstraint::newWeightConstraint(ctx, a, wlits, 3, &c);
+
+		WeightConstraint* wc = dynamic_cast<WeightConstraint*>(c);
+		//wc->extractActivePB(*solver, lits, bound, slack, a);
+
+		//CPPUNIT_ASSERT_EQUAL(bound, 3LL);
 	}
 
 private:
@@ -83,9 +119,8 @@ private:
 	Solver*       solver;
 
 	PBConstraint::PBConstraint* createPbConstraint() {
-		WeightLitVec lits = makeWeightLits();
-		wsum_t bound = 3;
-		return new PBConstraint::PBConstraint(*solver, lits, bound);
+		WeightLitVec wlits = makeWeightLits();
+		return new PBConstraint::PBConstraint(*solver, wlits, 3);
 	}
 
 	WeightLitVec makeWeightLits() {
@@ -96,7 +131,6 @@ private:
 		return res;
 	}
 
-	Literal body;
 	Literal a, b, c;
 };
 
