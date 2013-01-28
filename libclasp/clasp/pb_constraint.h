@@ -46,9 +46,9 @@ public:
 	PBConstraint(Solver& s, const Literal, const Antecedent&, bool conflict= false);
 
 	/*!
-	 * Helper constuctor for tests
+	 * Directly construct PBConstraints
 	 */
-	PBConstraint(Solver&, WeightLitVec lits, wsum_t bound) : lits_(lits), bound_(bound), slack_(0), pidx_(0), up_(0), undo_(0) {}
+	PBConstraint(Solver&, WeightLitVec lits, wsum_t bound);
 
 	ConstraintType type() const { return Constraint_t::learnt_pb; }
 

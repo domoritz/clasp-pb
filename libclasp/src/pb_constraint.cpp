@@ -41,7 +41,7 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 		for (uint32 i = 0; i != pbc->size(); ++i) {
 			Literal l= pbc->lit(i);
 
-			if ( s.value(l.var()) == value_free || s.level(l.var()) != 0 || l == p){
+			if (s.value(l.var()) == value_free || s.level(l.var()) != 0 || l == p){
 				lits_.push_back(pbc->lits_[i]);
 			}
 			else if (s.isTrue(l)){
@@ -79,6 +79,9 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 		}
 	}
 }
+
+PBConstraint::PBConstraint(Solver &, WeightLitVec lits, wsum_t bound):
+lits_(lits), bound_(bound), slack_(0), pidx_(0), up_(0), undo_(0) {}
 
 void PBConstraint::destroy(Solver* s, bool detach) {
 	if (this->undo_) {
