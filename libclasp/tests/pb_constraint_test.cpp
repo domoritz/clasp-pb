@@ -24,8 +24,10 @@
 #include <algorithm> 
 #include <clasp/solver.h>
 #include <clasp/clause.h>
-#include <clasp/pb_constraint.h>
 #include <clasp/solver_strategies.h>
+#define private public
+#include <clasp/pb_constraint.h>
+#undef private
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4267) //  conversion from 'size_t' to unsigned int
