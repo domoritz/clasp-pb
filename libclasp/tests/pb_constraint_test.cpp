@@ -41,6 +41,10 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST_SUITE(PbConstraintTest);
 	CPPUNIT_TEST(testTrivial);
 	CPPUNIT_TEST(testSimpleConstructor);
+	CPPUNIT_TEST(testCanonicalizeMerge);
+	CPPUNIT_TEST(testCanonicalizeSort);
+	CPPUNIT_TEST(testCanonicalizeOversaturated);
+	CPPUNIT_TEST(testCanonicalizeCardinalityConstraint);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -52,11 +56,12 @@ public:
 		a = posLit(ctx.addVar(Var_t::atom_var));
 		b = posLit(ctx.addVar(Var_t::atom_var));
 		c = posLit(ctx.addVar(Var_t::atom_var));
+		d = posLit(ctx.addVar(Var_t::atom_var));
+
+		ctx.startAddConstraints();
 
 		solver = ctx.master();
 		solver->strategies().analyze = SolverStrategies::res_learning;
-
-		ctx.startAddConstraints();
 	}
 
 	void testTrivial() {
@@ -69,6 +74,74 @@ public:
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
 	}
 
+	void testCanonicalizeMerge() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 3));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(~c, 1));
+		wlits.push_back(WeightLiteral(b, 1));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+
+		assert(4U == pbc->size());
+		assert(1 == pbc->weight(1));
+
+		CPPUNIT_ASSERT_EQUAL(0LL, pbc->canonicalize(*solver));
+		// b should have been merged
+		CPPUNIT_ASSERT_EQUAL(3U, pbc->size());
+		CPPUNIT_ASSERT_EQUAL(2, pbc->weight(1));
+
+		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
+	}
+
+	void testCanonicalizeSort() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 7));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(~c, 1));
+		wlits.push_back(WeightLiteral(d, 3));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 7);
+
+		pbc->canonicalize(*solver);
+
+		CPPUNIT_ASSERT_EQUAL(4U, pbc->size());
+		CPPUNIT_ASSERT_EQUAL(7, pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(3, pbc->weight(1));
+		CPPUNIT_ASSERT_EQUAL(2, pbc->weight(2));
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(3));
+
+		CPPUNIT_ASSERT_EQUAL(7LL, pbc->bound());
+	}
+
+	void testCanonicalizeOversaturated() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 5));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(~c, 4));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+
+		assert(5 == pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(3LL, pbc->canonicalize(*solver));
+		CPPUNIT_ASSERT_EQUAL(3, pbc->weight(0));
+
+		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
+	}
+
+	void testCanonicalizeCardinalityConstraint() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 3));
+		wlits.push_back(WeightLiteral(b, 3));
+		wlits.push_back(WeightLiteral(~c, 3));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 6);
+
+		CPPUNIT_ASSERT_EQUAL(0LL, pbc->canonicalize(*solver));
+
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(1));
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(2));
+
+		CPPUNIT_ASSERT_EQUAL(2LL, pbc->bound());
+	}
+
 	void testSimplePropagation() {
 		// a :- b.
 		// b.
@@ -78,7 +151,7 @@ public:
 		ctx.addBinary(~a, b);
 		ctx.addBinary(a, ~b);
 
-		CPPUNIT_ASSERT_EQUAL(3U, solver->numVars());
+		CPPUNIT_ASSERT_EQUAL(4U, solver->numVars());
 
 		CPPUNIT_ASSERT(!solver->hasConflict());
 
@@ -164,7 +237,7 @@ private:
 		return res;
 	}
 
-	Literal a, b, c;
+	Literal a, b, c, d;
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(PbConstraintTest);
