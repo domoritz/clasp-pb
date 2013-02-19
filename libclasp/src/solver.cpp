@@ -703,7 +703,7 @@ bool Solver::resolveConflict() {
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
 			undoUntil( uipLevel );
 			PBConstraint* pbRes = aggregator_;
-			aggregator_         = 0;
+			aggregator_         = NULL;
 			if (pbRes && pbRes->bound() <= 1) {
 				// Subsumed by clause
 				pbRes->destroy(0, false);
