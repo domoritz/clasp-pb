@@ -540,6 +540,8 @@ public:
 	bool     isTrue(Literal p)      const { assert(validVar(p.var())); return assign_.value(p.var()) == trueValue(p); }
 	//! Returns true if p is false w.r.t the current assignment.
 	bool     isFalse(Literal p)     const { assert(validVar(p.var())); return assign_.value(p.var()) == falseValue(p); }
+	//! Returns true if p in neither true nor false w.r.t the current assignment.
+	bool     isUndecided(Literal p) const { return !isTrue(p) && !isFalse(p); }
 	//! Returns the literal of v being true in the current assignment.
 	/*!
 	 * \pre v is assigned a value in the current assignment
