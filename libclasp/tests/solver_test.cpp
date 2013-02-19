@@ -88,6 +88,7 @@ class SolverTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testForce);
 	CPPUNIT_TEST(testNoUpdateOnConsistentAssign);
 	CPPUNIT_TEST(testAssume);
+	CPPUNIT_TEST(testIsUndecided);
 	CPPUNIT_TEST(testGetDecision);
 	CPPUNIT_TEST(testAddWatch);
 	CPPUNIT_TEST(testRemoveWatch);
@@ -378,6 +379,19 @@ public:
 		CPPUNIT_ASSERT_EQUAL(value_true, s.value(p.var()));
 		CPPUNIT_ASSERT_EQUAL(1u, s.decisionLevel());
 		CPPUNIT_ASSERT_EQUAL(1u, s.queueSize());
+	}
+
+	void testIsUndecided() {
+		Literal p = posLit(ctx.addVar(Var_t::atom_var));
+		Solver& s = ctx.startAddConstraints();
+		ctx.endInit();
+		CPPUNIT_ASSERT_EQUAL(true, s.isUndecided(p));
+		s.assume(p);
+		CPPUNIT_ASSERT_EQUAL(false, s.isUndecided(p));
+		s.clearAssumptions();
+		CPPUNIT_ASSERT_EQUAL(true, s.isUndecided(p));
+		s.assume(~p);
+		CPPUNIT_ASSERT_EQUAL(false, s.isUndecided(p));
 	}
 
 	void testGetDecision() {
