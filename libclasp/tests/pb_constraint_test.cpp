@@ -40,6 +40,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testTrivial);
 	CPPUNIT_TEST(testSimpleConstructor);
 	CPPUNIT_TEST(testSimplePropagation);
+	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
 	CPPUNIT_TEST(testConstructionFromConflict);
 	CPPUNIT_TEST_SUITE_END();
@@ -83,6 +84,36 @@ public:
 		CPPUNIT_ASSERT(solver->hasConflict());
 
 		CPPUNIT_ASSERT_EQUAL(1ULL, solver->stats.conflicts);
+	}
+
+	void testSimplePbPropagation() {
+		/*
+		 * 2*a + 1*b + 1* not c >= 3 can propagate a
+		 * because the factor for a is larger than
+		 * the constraint's slack (1)
+		 */
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 2));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(~c, 1));
+
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		ctx.endInit();
+		CPPUNIT_ASSERT_EQUAL(false, solver->isTrue(a));
+		pbc->integrate(*solver);
+		CPPUNIT_ASSERT_EQUAL(true, solver->isTrue(a));
+		CPPUNIT_ASSERT_EQUAL(true, solver->isUndecided(b));
+		CPPUNIT_ASSERT_EQUAL(true, solver->isUndecided(c));
+
+		/*
+		 * When b is set to false, the slack becomes 0,
+		 * and all variables have to be decided
+		 */
+		solver->assume(~b);
+		solver->propagate();
+		CPPUNIT_ASSERT_EQUAL(true, solver->isTrue(a));
+		CPPUNIT_ASSERT_EQUAL(true, solver->isFalse(b));
+		CPPUNIT_ASSERT_EQUAL(true, solver->isFalse(c));
 	}
 
 	void testConstructionFromConflict() {
