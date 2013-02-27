@@ -158,11 +158,7 @@ public:
 	}
 
 	void testMultiply() {
-		WeightLitVec wlits;
-		wlits.push_back(WeightLiteral(a, 5));
-		wlits.push_back(WeightLiteral(b, 3));
-		wlits.push_back(WeightLiteral(~c, 2));
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		PBConstraint::PBConstraint* pbc = createPbConstraint();
 
 		ctx.endInit();
 		pbc->integrate(*solver);
@@ -171,8 +167,8 @@ public:
 
 		pbc->multiply(2);
 
-		CPPUNIT_ASSERT_EQUAL(10, pbc->weight(0));
-		CPPUNIT_ASSERT_EQUAL(6, pbc->weight(1));
+		CPPUNIT_ASSERT_EQUAL(6, pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(10, pbc->weight(1));
 		CPPUNIT_ASSERT_EQUAL(4, pbc->weight(2));
 
 		CPPUNIT_ASSERT_EQUAL(6LL, pbc->bound());
@@ -271,9 +267,9 @@ private:
 
 	WeightLitVec makeWeightLits() {
 		WeightLitVec res;
-		res.push_back(WeightLiteral(a, 2));
-		res.push_back(WeightLiteral(b, 1));
-		res.push_back(WeightLiteral(~c, 1));
+		res.push_back(WeightLiteral(a, 3));
+		res.push_back(WeightLiteral(b, 5));
+		res.push_back(WeightLiteral(~c, 2));
 		return res;
 	}
 
