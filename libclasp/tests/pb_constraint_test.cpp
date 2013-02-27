@@ -46,6 +46,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testCanonicalizeOversaturated);
 	CPPUNIT_TEST(testCanonicalizeCardinalityConstraint);
 	CPPUNIT_TEST(testIntegrateAddsLearntConstraint);
+	CPPUNIT_TEST(testMultiply);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -154,6 +155,29 @@ public:
 		pbc->integrate(*solver);
 		CPPUNIT_ASSERT_EQUAL(1U, solver->numLearntConstraints());
 		CPPUNIT_ASSERT_EQUAL(0U, solver->numConstraints());
+	}
+
+	void testMultiply() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 5));
+		wlits.push_back(WeightLiteral(b, 3));
+		wlits.push_back(WeightLiteral(~c, 2));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+
+		ctx.endInit();
+		pbc->integrate(*solver);
+
+		CPPUNIT_ASSERT_EQUAL(7LL, pbc->slack());
+
+		pbc->multiply(2);
+
+		CPPUNIT_ASSERT_EQUAL(10, pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(6, pbc->weight(1));
+		CPPUNIT_ASSERT_EQUAL(4, pbc->weight(2));
+
+		CPPUNIT_ASSERT_EQUAL(6LL, pbc->bound());
+
+		CPPUNIT_ASSERT_EQUAL(14LL, pbc->slack());
 	}
 
 	void testSimplePropagation() {
