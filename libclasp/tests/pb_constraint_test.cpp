@@ -190,6 +190,7 @@ public:
 		CPPUNIT_ASSERT_EQUAL(true, solver->isTrue(a));
 		CPPUNIT_ASSERT_EQUAL(true, solver->isUndecided(b));
 		CPPUNIT_ASSERT_EQUAL(true, solver->isUndecided(c));
+		CPPUNIT_ASSERT_EQUAL(1LL, pbc->slack());
 
 		/*
 		 * When b is set to false, the slack becomes 0,
@@ -200,6 +201,7 @@ public:
 		CPPUNIT_ASSERT_EQUAL(true, solver->isTrue(a));
 		CPPUNIT_ASSERT_EQUAL(true, solver->isFalse(b));
 		CPPUNIT_ASSERT_EQUAL(true, solver->isFalse(c));
+		CPPUNIT_ASSERT_EQUAL(0LL, pbc->slack());
 	}
 
 	void testConstructionFromConflict() {
