@@ -121,8 +121,11 @@ public:
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
 
 		assert(5 == pbc->weight(0));
+		pbc->slack_ = 7LL;
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->canonicalize(*solver));
 		CPPUNIT_ASSERT_EQUAL(3, pbc->weight(0));
+		// canonicalize does not adjust the slack
+		CPPUNIT_ASSERT_EQUAL(7LL, pbc->slack());
 
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
 	}
