@@ -48,6 +48,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testMultiply);
 	CPPUNIT_TEST(testWeakenWithProvidedLiteral);
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
+	CPPUNIT_TEST(testUpdateConstraint);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -205,7 +206,7 @@ public:
 		ctx.endInit();
 
 		PBConstraint::PBConstraint* pbc = createPbConstraint();
-		CPPUNIT_ASSERT_EQUAL(3UL, pbc->lits_.size());
+		assert(3UL == pbc->lits_.size());
 		solver->assume(~a);
 		solver->assume(b);
 		solver->assume(c);
@@ -217,6 +218,19 @@ public:
 		CPPUNIT_ASSERT_EQUAL(-1LL, pbc->slack());
 
 		delete pbc;
+	}
+
+	void testUpdateConstraint() {
+		PBConstraint::PBConstraint* pbc = createPbConstraint();
+		pbc->integrate(*solver);
+		assert(7LL == pbc->slack());
+		assert(0U == pbc->undo_->idx());
+		assert(0U == pbc->up_);
+		pbc->updateConstraint(*solver, 2);
+		CPPUNIT_ASSERT_EQUAL(5LL, pbc->slack());
+		CPPUNIT_ASSERT_EQUAL(2U, pbc->undo_->idx());
+		CPPUNIT_ASSERT_EQUAL(1U, pbc->up_);
+		CPPUNIT_ASSERT_EQUAL(1U, pbc->undo_[2].data);
 	}
 
 	void testSimplePropagation() {
