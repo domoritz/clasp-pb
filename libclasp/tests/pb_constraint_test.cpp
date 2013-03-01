@@ -47,6 +47,8 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testCanonicalizeCardinalityConstraint);
 	CPPUNIT_TEST(testIntegrateAddsLearntConstraint);
 	CPPUNIT_TEST(testMultiply);
+	CPPUNIT_TEST(testWeakenWithProvidedLiteral);
+	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -174,6 +176,42 @@ public:
 		CPPUNIT_ASSERT_EQUAL(6LL, pbc->bound());
 
 		CPPUNIT_ASSERT_EQUAL(14LL, pbc->slack());
+	}
+
+	void testWeakenWithProvidedLiteral() {
+		ctx.endInit();
+
+		PBConstraint::PBConstraint* pbc = createPbConstraint();
+		CPPUNIT_ASSERT_EQUAL(3UL, pbc->lits_.size());
+		solver->assume(~a);
+		solver->assume(b);
+		solver->assume(c);
+		pbc->weaken(*solver, b);
+		CPPUNIT_ASSERT_EQUAL(3UL, pbc->lits_.size());
+		CPPUNIT_ASSERT_EQUAL(1LL, pbc->bound());
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(1));
+		CPPUNIT_ASSERT_EQUAL(0LL, pbc->slack());
+
+		delete pbc;
+	}
+
+	void testWeakenWithoutProvidedLiteral() {
+		ctx.endInit();
+
+		PBConstraint::PBConstraint* pbc = createPbConstraint();
+		CPPUNIT_ASSERT_EQUAL(3UL, pbc->lits_.size());
+		solver->assume(~a);
+		solver->assume(b);
+		solver->assume(c);
+		pbc->weaken(*solver);
+		CPPUNIT_ASSERT_EQUAL(2UL, pbc->lits_.size());
+		CPPUNIT_ASSERT_EQUAL(1LL, pbc->bound());
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(0));
+		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(1));
+		CPPUNIT_ASSERT_EQUAL(-1LL, pbc->slack());
+
+		delete pbc;
 	}
 
 	void testSimplePropagation() {
