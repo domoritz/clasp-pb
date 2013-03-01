@@ -39,7 +39,6 @@ namespace Clasp { namespace Test {
 
 class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST_SUITE(PbConstraintTest);
-	CPPUNIT_TEST(testTrivial);
 	CPPUNIT_TEST(testSimpleConstructor);
 	CPPUNIT_TEST(testCanonicalizeMerge);
 	CPPUNIT_TEST(testCanonicalizeSort);
@@ -66,10 +65,6 @@ public:
 
 		solver = ctx.master();
 		solver->strategies().analyze = SolverStrategies::res_learning;
-	}
-
-	void testTrivial() {
-		CPPUNIT_ASSERT(true);
 	}
 
 	void testSimpleConstructor() {
