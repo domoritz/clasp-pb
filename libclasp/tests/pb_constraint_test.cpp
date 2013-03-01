@@ -188,12 +188,12 @@ public:
 		ctx.endInit();
 
 		PBConstraint::PBConstraint* pbc = createPbConstraint();
-		CPPUNIT_ASSERT_EQUAL(3UL, pbc->lits_.size());
+		CPPUNIT_ASSERT_EQUAL(3U, pbc->size());
 		solver->assume(~a);
 		solver->assume(b);
 		solver->assume(c);
 		pbc->weaken(*solver, b);
-		CPPUNIT_ASSERT_EQUAL(3UL, pbc->lits_.size());
+		CPPUNIT_ASSERT_EQUAL(3U, pbc->size());
 		CPPUNIT_ASSERT_EQUAL(1LL, pbc->bound());
 		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(0));
 		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(1));
@@ -206,12 +206,12 @@ public:
 		ctx.endInit();
 
 		PBConstraint::PBConstraint* pbc = createPbConstraint();
-		assert(3UL == pbc->lits_.size());
+		assert(3UL == pbc->size());
 		solver->assume(~a);
 		solver->assume(b);
 		solver->assume(c);
 		pbc->weaken(*solver);
-		CPPUNIT_ASSERT_EQUAL(2UL, pbc->lits_.size());
+		CPPUNIT_ASSERT_EQUAL(2U, pbc->size());
 		CPPUNIT_ASSERT_EQUAL(1LL, pbc->bound());
 		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(0));
 		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(1));
