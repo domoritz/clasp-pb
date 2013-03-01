@@ -71,6 +71,8 @@ public:
 		PBConstraint::PBConstraint* pbc = createPbConstraint();
 		CPPUNIT_ASSERT(pbc);
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
+
+		delete pbc;
 	}
 
 	void testCanonicalizeMerge() {
@@ -90,6 +92,8 @@ public:
 		CPPUNIT_ASSERT_EQUAL(2, pbc->weight(1));
 
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
+
+		delete pbc;
 	}
 
 	void testCanonicalizeSort() {
@@ -109,6 +113,8 @@ public:
 		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(3));
 
 		CPPUNIT_ASSERT_EQUAL(7LL, pbc->bound());
+
+		delete pbc;
 	}
 
 	void testCanonicalizeOversaturated() {
@@ -126,6 +132,8 @@ public:
 		CPPUNIT_ASSERT_EQUAL(7LL, pbc->slack());
 
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
+
+		delete pbc;
 	}
 
 	void testCanonicalizeCardinalityConstraint() {
@@ -142,6 +150,8 @@ public:
 		CPPUNIT_ASSERT_EQUAL(1, pbc->weight(2));
 
 		CPPUNIT_ASSERT_EQUAL(2LL, pbc->bound());
+
+		delete pbc;
 	}
 
 	void testIntegrateAddsLearntConstraint() {
