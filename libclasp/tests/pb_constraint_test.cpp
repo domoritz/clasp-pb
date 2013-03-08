@@ -48,6 +48,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testMultiply);
 	CPPUNIT_TEST(testWeakenWithProvidedLiteral);
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
+	CPPUNIT_TEST(testReason);
 	CPPUNIT_TEST(testUpdateConstraint);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
@@ -232,6 +233,30 @@ public:
 		CPPUNIT_ASSERT_EQUAL(2U, pbc->undo_->idx());
 		CPPUNIT_ASSERT_EQUAL(1U, pbc->up_);
 		CPPUNIT_ASSERT_EQUAL(1U, pbc->undo_[2].data);
+	}
+
+	void testReason() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 2));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(~c, 1));
+
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		ctx.endInit();
+		pbc->integrate(*solver);
+
+		LitVec lits;
+		assert(0UL == lits.size());
+		pbc->reason(*solver, a, lits);
+		// a has no reason, it is implied by the pbc
+		CPPUNIT_ASSERT_EQUAL(0UL, lits.size());
+
+		solver->assume(~b);
+		solver->propagate();
+
+		pbc->reason(*solver, ~c, lits);
+		CPPUNIT_ASSERT_EQUAL(1UL, lits.size());
+		CPPUNIT_ASSERT(~b == lits[0]);
 	}
 
 	void testSimplePropagation() {
