@@ -71,6 +71,7 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 		ant.reason(s, p, reasons);
 
 		slack_= -1;
+		lits_.reserve(reasons.size()+1);
 		lits_.push_back(WeightLiteral(p, 1));
 		for(LitVec::size_type i= 0; i != reasons.size(); ++i){
 			lits_.push_back(WeightLiteral(~reasons[i],1));
