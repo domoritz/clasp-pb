@@ -115,7 +115,7 @@ bool PBConstraint::integrate(Solver& s) {
 	undo_      = new UndoInfo[lits_.size()];
 	memset(undo_, 0, sizeof(UndoInfo)*lits_.size() );
 
-	for (LitVec::size_type i= 0; i < lits_.size(); ++i){
+	for (LitVec::size_type i= 0; i != lits_.size(); ++i){
 		slack_+= lits_[i].second;
 		addWatch(s, i);
 		if (s.isFalse(lit(i))) {
@@ -143,7 +143,8 @@ bool PBConstraint::integrate(Solver& s) {
 			}
 		}
 		// force might have undone any further false literals
-		if (up_ == todo || !s.isFalse(lit(undo_[up_].idx()))) { break; }
+		if (up_ == todo || !s.isFalse(lit(undo_[up_].idx())))
+			break;
 		uint32 idx = undo_[up_].idx();
 		Var    var = lit(idx).var();
 		thisDL     = s.level(var);
@@ -151,7 +152,7 @@ bool PBConstraint::integrate(Solver& s) {
 			s.addUndoWatch(lastDL= thisDL, this);
 		}
 		assert(!litSeen(idx));
-		slack_    -= weight(idx);
+		slack_ -= weight(idx);
 		toggleLitSeen(idx);
 	}
 	setPIndex(n);
@@ -188,23 +189,24 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 	mel= mel/mgcd;
 	mag= mag/mgcd;
 
-	if ( (bound_ > static_cast<wsum_t>(UINT64_MAX >> 2)/mel )       ||
+	if ( (bound_ > static_cast<wsum_t>(UINT64_MAX / 4)/mel )        ||
 		 (slack_ < (std::numeric_limits<wsum_t>::min() / mel) / 2)  ||
-		 (static_cast<wsum_t>(lits_[0].second)*mel > static_cast<wsum_t>(UINT32_MAX >> 2) )){
+		 (static_cast<wsum_t>(lits_[0].second)*mel > static_cast<wsum_t>(UINT32_MAX / 4) )){
 		// we can't guarantee that the added values do not overflow!
 		// this is a really crude version of overflow handling
 		weaken(s);
 		mag= 1;
 		mel= eliminator.weight(l);
 	}
-	if ((eliminator.bound_ > static_cast<wsum_t>(UINT64_MAX >> 2)/mag )  ||
-		(slack_ > (std::numeric_limits<wsum_t>::max() / mag) >> 1)       ||
-		(static_cast<wsum_t>(eliminator.lits_[0].second)*mag > static_cast<wsum_t>(UINT32_MAX >> 2) )){
+	if ((eliminator.bound_ > static_cast<wsum_t>(UINT64_MAX / 4)/mag )  ||
+		(slack_ > (std::numeric_limits<wsum_t>::max() / mag) / 2)       ||
+		(static_cast<wsum_t>(eliminator.lits_[0].second)*mag > static_cast<wsum_t>(UINT32_MAX / 4) )){
 		eliminator.weaken(s,l);
 		mel= 1;
 		mag= weight(~l);
 	}
 
+	// TODO: From thesis: "Checks if the sum of the slacks is non-negative and applies weakening if it is not"
 	if (mag*eliminator.slack_ + mel*slack_ >= 0 ){
 		eliminator.weaken(s,l);
 		mel= 1;
