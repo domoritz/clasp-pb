@@ -161,12 +161,16 @@ bool PBConstraint::integrate(Solver& s) {
 namespace {
 	int32 gcd(int32 x, int32 y){
 		assert(x != 0 && y != 0);
-		while (x != y){
-			if (x > y) x-= y;
-			else       y-= x;
+		while ( true ) {
+			if ( !x )
+				return y;
+			y %= x;
+
+			if ( !y )
+				return x;
+			x %= y;
 		}
-		return x;
-	};
+	}
 }
 
 void PBConstraint::varElimination(Solver& s, Literal l){
