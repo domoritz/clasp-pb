@@ -320,23 +320,34 @@ public:
 	}
 
 	void testExtractionFromWeightConstraint() {
-		Constraint* c;
+		Constraint* co;
 		WeightLitVec lits;
-		wsum_t bound;
-		wsum_t slack;
+		wsum_t bound = 0;
+		wsum_t slack = 0;
 
-		WeightLitVec wlits = makeWeightLits();
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 3));
+		wlits.push_back(WeightLiteral(b, 3));
+		wlits.push_back(WeightLiteral(c, 1));
 
-		ctx.addUnary(a);
+		WeightConstraint::newWeightConstraint(ctx, a, wlits, 5, &co);
+		WeightConstraint* wc = dynamic_cast<WeightConstraint*>(co);
+
 		ctx.endInit();
+		solver->assume(~b);
 		solver->propagate();
 
-		WeightConstraint::newWeightConstraint(ctx, a, wlits, 3, &c);
+		assert(ctx.numConstraints() == 1);
+		assert(wc);
+		wc->extractActivePB(*solver, lits, bound, slack, d);
 
-		WeightConstraint* wc = dynamic_cast<WeightConstraint*>(c);
-		//wc->extractActivePB(*solver, lits, bound, slack, a);
-
-		//CPPUNIT_ASSERT_EQUAL(bound, 3LL);
+		CPPUNIT_ASSERT_EQUAL(5LL, bound);
+		CPPUNIT_ASSERT_EQUAL(4LL, slack);
+		CPPUNIT_ASSERT_EQUAL(4UL, lits.size());
+		CPPUNIT_ASSERT(std::find(lits.begin(), lits.end(), WeightLiteral(a, 1)) == lits.end());
+		CPPUNIT_ASSERT(std::find(lits.begin(), lits.end(), WeightLiteral(b, 2)) == lits.end());
+		CPPUNIT_ASSERT(std::find(lits.begin(), lits.end(), WeightLiteral(c, 3)) == lits.end());
+		CPPUNIT_ASSERT(std::find(lits.begin(), lits.end(), WeightLiteral(d, 4)) == lits.end());
 	}
 
 	void testGcd() {
