@@ -52,16 +52,15 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 			}
 		}
 		if(conflict){
-			// this is a conflicting constraint, but didn't update its slack!
+			// this is a conflicting constraint, but hasn't updated its slack!
 			slack_-= weight(p);
 		}
 	}
 	else if ( generic && (wc= dynamic_cast<WeightConstraint*>(ant.constraint())) != 0 ){
-
 		wc->extractActivePB(s, lits_, bound_, slack_, p);
 
 		if(conflict){
-			// this is a conflicting constraint, but didn't update its slack!
+			// this is a conflicting constraint, but hasn't updated its slack!
 			slack_-= weight(p);
 		}
 	}
@@ -224,7 +223,7 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 	// add up literals and adjust slack as needed
 	lits_.insert(lits_.end(), eliminator.lits_.begin(), eliminator.lits_.end());
 	slack_-= canonicalize(s);
-	assert( slack_ < 0 && "the derived constraint is not violated");
+	assert( slack_ < 0 && "the constraint should be violated");
 }
 
 bool PBConstraint::multiply(weight_t x){
@@ -249,7 +248,7 @@ bool PBConstraint::multiply(weight_t x){
 
 void PBConstraint::weaken(Solver& s, Literal p){
 	assert( weight(p) > 0 || p == Literal(0, true) );
-	assert( undo_ == 0 && "this is not integrated yet");
+	assert( undo_ == 0 && "this should not be integrated yet");
 	WeightLitVec tmp;
 	for (LitVec::size_type i= 0; i != lits_.size(); ++i){
 		Literal l= lits_[i].first;
