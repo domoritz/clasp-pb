@@ -474,4 +474,14 @@ bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
 	return true;
 }
 
+std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& pbc)
+{
+	cout << "PB Constraint [ ";
+	for (uint32 i = 0; i < pbc.size(); ++i) {
+		cout << std::showpos << pbc.weight(i) << " x" << pbc.lit(i).index() << " ";
+	}
+	cout << std::noshowpos << ">= " << pbc.bound() << " ], Slack: " << pbc.slack();
+	return cout;
+}
+
 } //namespace Clasp
