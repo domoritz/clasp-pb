@@ -77,7 +77,7 @@ public:
 	bool minimize(Solver& s, Literal p, CCMinRecursive* r);
 
 	//! Returns the literal at position i
-	Literal lit(uint32 i) const {
+	const Literal& lit(uint32 i) const {
 		return lits_[i].first;
 	}
 	//! Returns the weight of the i'th literal
