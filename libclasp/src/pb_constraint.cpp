@@ -249,6 +249,11 @@ bool PBConstraint::multiply(weight_t x){
 	return true;
 }
 
+void PBConstraint::extractClauses(ClauseVec &clauses) const
+{
+
+}
+
 void PBConstraint::weaken(Solver& s, Literal p){
 	assert( weight(p) > 0 || p == Literal(0, true) );
 	assert( undo_ == 0 && "this should not be integrated yet");

@@ -50,6 +50,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
 	CPPUNIT_TEST(testReason);
 	CPPUNIT_TEST(testUpdateConstraint);
+	CPPUNIT_TEST(testClauseExtraction);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -257,6 +258,14 @@ public:
 		pbc->reason(*solver, ~c, lits);
 		CPPUNIT_ASSERT_EQUAL(1UL, lits.size());
 		CPPUNIT_ASSERT(~b == lits[0]);
+	}
+
+	void testClauseExtraction() {
+		PBConstraint::PBConstraint* pbc = createPbConstraint();
+		Clasp::ClauseVec clauses;
+		pbc->extractClauses(clauses);
+		CPPUNIT_ASSERT_EQUAL(1UL, clauses.size());
+		CPPUNIT_ASSERT_EQUAL(2U, clauses[0].size());
 	}
 
 	void testSimplePropagation() {

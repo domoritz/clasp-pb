@@ -25,11 +25,15 @@
 #pragma once
 #endif
 
+#include <tr1/unordered_map>
 #include <clasp/constraint.h>
 #include <clasp/weight_constraint.h>
 #include <clasp/solver.h>
+#include <clasp/clause.h>
 
 namespace Clasp {
+
+typedef PodVector<Clause>::type ClauseVec;
 
 //! Class implementing learnt Pseudo-Boolean constraints
 /*!
@@ -121,6 +125,9 @@ public:
 	//! Multiply constraint with given factor
 	bool multiply(weight_t);
 
+	//! Get the clauses that represent this PBC using BDDs
+	void extractClauses(ClauseVec& clauses) const;
+
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
 	~PBConstraint() {}
@@ -200,5 +207,57 @@ private:
 	};
 
 };
+
+
+Literal buildBDD(const PBConstraint& c, int size, int64 sum, int64 material_left, std::tr1::unordered_map<std::pair<int,int64>,Literal>& memo, int max_cost)
+{
+	int64 lower_limit = (c.lo == Int_MIN) ? Int_MIN : c.lo - sum;
+	int64 upper_limit = (c.hi == Int_MAX) ? Int_MAX : c.hi - sum;
+
+	if (lower_limit <= 0 && upper_limit >= material_left)
+		return true;
+	else if (lower_limit > material_left || upper_limit < 0)
+		return false;
+	else if (FEnv::topSize() > max_cost)
+		return _undef_;     // (mycket elegant!)
+
+	std::pair<int,int64>   key = Pair_new(size, lower_limit);
+	Formula         ret;
+
+	if (!memo.peek(key, ret)){
+		assert(size != 0);
+		size--;
+		material_left -= c(size);
+		int64 hi_sum = sign(c[size]) ? sum : sum + c(size);
+		int64 lo_sum = sign(c[size]) ? sum + c(size) : sum;
+		Literal hi = buildBDD(c, size, hi_sum, material_left, memo, max_cost);
+		if (hi == _undef_) return _undef_;
+		Literal lo = buildBDD(c, size, lo_sum, material_left, memo, max_cost);
+		if (lo == _undef_) return _undef_;
+		ret = ITE(var(var(c[size])), hi, lo);
+		memo.set(key, ret);
+	}
+	return ret;
+}
+
+Formula convertToBdd(const Linear& c, int max_cost)
+{
+	std::tr1::unordered_map<Pair<int,int64>, Formula> memo;
+
+	int64 sum = 0;
+	for (int j = 0; j < c.size; j++)
+		sum += c(j);
+
+	FEnv::push();
+	Literal ret = buildBDD(c, c.size, 0, sum, memo, max_cost);
+	if (ret == _undef_)
+		FEnv::pop();
+	else{
+		if (opt_verbosity >= 1)
+			reportf("BDD-cost:%5d\n", FEnv::topSize());
+		FEnv::keep();
+	}
+	return ret;
+}
 
 } //namespace Clasp
