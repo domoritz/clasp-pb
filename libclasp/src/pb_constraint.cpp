@@ -247,7 +247,6 @@ namespace {
 }
 
 void PBConstraint::varElimination(Solver& s, Literal l){
-	// TODO: was soll das hier?
 	assert( undo_ == 0 && "the constraint is not integrated into a solver yet");
 	assert( weight(~l) > 0 && "can't eliminate non-existing literal");
 	assert( slack_ < 0 && "the constraint should be violated");
