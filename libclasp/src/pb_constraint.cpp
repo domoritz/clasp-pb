@@ -37,7 +37,6 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 		bound_= pbc->bound_;
 		slack_= pbc->slack_;
 
-		lits_.reserve(pbc->lits_.size());
 		for (uint32 i = 0; i != pbc->size(); ++i) {
 			Literal l= pbc->lit(i);
 
@@ -123,7 +122,6 @@ void PBConstraint::newPBConstraint(Solver& s, const Literal p, const Antecedent&
 		PBConstraint* pbc= static_cast<PBConstraint*>(ant.constraint());
 		c = new PBConstraint(pbc->bound(), pbc->slack());
 
-		c->lits_.reserve(pbc->lits_.size());
 		for (uint32 i = 0; i != pbc->size(); ++i) {
 			Literal l= pbc->lit(i);
 
