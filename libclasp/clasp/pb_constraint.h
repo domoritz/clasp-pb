@@ -43,12 +43,20 @@ public:
 	 * The constructor does not take a number of (weighted) literals and a lower bound, because
 	 * PB constraints are created from conflicts
 	 */
-	PBConstraint(Solver& s, const Literal, const Antecedent&, bool conflict= false);
+	PBConstraint(Solver& s, const Literal, const Antecedent& ant, bool conflict=false);
 
 	/*!
 	 * Directly construct PBConstraints
 	 */
-	PBConstraint(Solver&, WeightLitVec lits, wsum_t bound);
+	PBConstraint(WeightLitVec lits, wsum_t bound=0, wsum_t slack=0);
+
+	PBConstraint(wsum_t bound=0, wsum_t slack=0);
+
+	//! Creates a new PB constraint from the given antecedent.
+	/*!
+	 * \return false if the constraint is initially conflicting w.r.t the current assignment.
+	 */
+	static void newPBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict=false, PBConstraint** out=NULL);
 
 	ConstraintType type() const { return Constraint_t::learnt_pb; }
 
@@ -126,7 +134,7 @@ private:
 	~PBConstraint() {}
 
 	//! Returns the literal at position i
-	inline Literal&  lit(uint32 i) { return lits_[i].first; }
+	inline Literal& lit(uint32 i) { return lits_[i].first; }
 
 	//! Returns the weight of the i'th literal
 	inline weight_t& weight(uint32 i) { return lits_[i].second; }

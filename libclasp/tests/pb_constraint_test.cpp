@@ -75,6 +75,8 @@ public:
 		CPPUNIT_ASSERT(pbc);
 		CPPUNIT_ASSERT_EQUAL(3LL, pbc->bound());
 
+		//std::cout << *pbc << std::endl;
+
 		delete pbc;
 	}
 
@@ -84,7 +86,7 @@ public:
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(~c, 1));
 		wlits.push_back(WeightLiteral(b, 1));
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 3);
 
 		assert(4U == pbc->size());
 		assert(1 == pbc->weight(1));
@@ -105,7 +107,7 @@ public:
 		wlits.push_back(WeightLiteral(b, 2));
 		wlits.push_back(WeightLiteral(~c, 1));
 		wlits.push_back(WeightLiteral(d, 3));
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 7);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 7);
 
 		pbc->canonicalize(*solver);
 
@@ -125,7 +127,7 @@ public:
 		wlits.push_back(WeightLiteral(a, 5));
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(~c, 4));
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 3);
 
 		assert(5 == pbc->weight(0));
 		pbc->slack_ = 7LL;
@@ -144,7 +146,7 @@ public:
 		wlits.push_back(WeightLiteral(a, 3));
 		wlits.push_back(WeightLiteral(b, 3));
 		wlits.push_back(WeightLiteral(~c, 3));
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 6);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 6);
 
 		CPPUNIT_ASSERT_EQUAL(0LL, pbc->canonicalize(*solver));
 
@@ -241,7 +243,7 @@ public:
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(~c, 1));
 
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 3);
 		ctx.endInit();
 		pbc->integrate(*solver);
 
@@ -289,7 +291,7 @@ public:
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(~c, 1));
 
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 3);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 3);
 		ctx.endInit();
 		CPPUNIT_ASSERT_EQUAL(false, solver->isTrue(a));
 		pbc->integrate(*solver);
@@ -365,7 +367,7 @@ private:
 
 	PBConstraint::PBConstraint* createPbConstraint() {
 		WeightLitVec wlits = makeWeightLits();
-		return new PBConstraint::PBConstraint(*solver, wlits, 3);
+		return new PBConstraint::PBConstraint(wlits, 3);
 	}
 
 	WeightLitVec makeWeightLits() {

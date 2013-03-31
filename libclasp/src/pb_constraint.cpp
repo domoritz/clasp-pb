@@ -51,7 +51,7 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 				slack_-= pbc->weight(i);
 			}
 		}
-		if(conflict){
+		if (conflict){
 			// this is a conflicting constraint, but hasn't updated its slack!
 			slack_-= weight(p);
 		}
@@ -59,7 +59,7 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 	else if ( generic && (wc= dynamic_cast<WeightConstraint*>(ant.constraint())) != 0 ){
 		wc->extractActivePB(s, lits_, bound_, slack_, p);
 
-		if(conflict){
+		if (conflict){
 			// this is a conflicting constraint, but hasn't updated its slack!
 			slack_-= weight(p);
 		}
@@ -80,8 +80,11 @@ bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 	}
 }
 
-PBConstraint::PBConstraint(Solver &, WeightLitVec lits, wsum_t bound):
-lits_(lits), bound_(bound), slack_(0), pidx_(0), up_(0), undo_(0) {}
+PBConstraint::PBConstraint(WeightLitVec lits, wsum_t bound, wsum_t slack):
+lits_(lits), bound_(bound), slack_(slack), pidx_(0), up_(0), undo_(0) {}
+
+PBConstraint::PBConstraint(wsum_t bound, wsum_t slack):
+bound_(bound), slack_(slack), pidx_(0), up_(0), undo_(0) {}
 
 void PBConstraint::destroy(Solver* s, bool detach) {
 	if (this->undo_) {
@@ -102,6 +105,77 @@ void PBConstraint::destroy(Solver* s, bool detach) {
 	void* mem    = static_cast<Constraint*>(this);
 	this->~PBConstraint();
 	::operator delete(mem);
+}
+
+void PBConstraint::newPBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict, PBConstraint** out) {
+	PBConstraint* c;
+
+	#if 0
+	c = new PBConstraint(s, p, ant, conflict);
+	*out = c;
+	return;
+	#endif
+
+	const bool generic= (ant.type() == Antecedent::generic_constraint);
+	WeightConstraint* wc;
+
+	if( generic && ant.constraint()->type() == Constraint_t::learnt_pb){
+		PBConstraint* pbc= static_cast<PBConstraint*>(ant.constraint());
+		c = new PBConstraint(pbc->bound(), pbc->slack());
+
+		c->lits_.reserve(pbc->lits_.size());
+		for (uint32 i = 0; i != pbc->size(); ++i) {
+			Literal l= pbc->lit(i);
+
+			if (s.value(l.var()) == value_free || s.level(l.var()) != 0 || l == p){
+				c->lits_.push_back(pbc->lits_[i]);
+			}
+			else if (s.isTrue(l)){
+				c->bound_-= pbc->weight(i);
+			}
+			else if (s.isFalse(l) && !pbc->litSeen(i)){
+				c->slack_-= pbc->weight(i);
+			}
+		}
+		if (conflict){
+			// this is a conflicting constraint, but hasn't updated its slack!
+			c->slack_-= c->weight(p);
+		}
+	}
+	else if ( generic && (wc= dynamic_cast<WeightConstraint*>(ant.constraint())) != 0 ){
+		#if 0
+		WeightLitVec lits;
+		wsum_t bound;
+		wsum_t slack;
+		wc->extractActivePB(s, lits, bound, slack, p);
+		c = new PBConstraint(lits, bound, slack);
+		#else
+		c = new PBConstraint();
+		wc->extractActivePB(s, c->lits_, c->bound_, c->slack_, p);
+		#endif
+
+		if (conflict){
+			// this is a conflicting constraint, but hasn't updated its slack!
+			c->slack_-= c->weight(p);
+		}
+	}
+	else {
+		// This could be a clause, or about anything else...
+		// Let's just use the reason it provides and build a PB constraint from that
+		LitVec reasons;
+		ant.reason(s, p, reasons);
+		c = new PBConstraint(1, -1);
+		c->lits_.reserve(reasons.size()+1);
+		c->lits_.push_back(WeightLiteral(p, 1));
+		for(LitVec::size_type i= 0; i != reasons.size(); ++i){
+			c->lits_.push_back(WeightLiteral(~reasons[i],1));
+			if(s.isTrue(c->lit(i)))
+				c->slack_++;
+		}
+	}
+
+	assert(c);
+	*out = c;
 }
 
 bool PBConstraint::integrate(Solver& s) {

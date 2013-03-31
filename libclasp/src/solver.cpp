@@ -558,7 +558,8 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			a.reason(*this, p, conflict_);
 			if(strategy_.analyze) {
 				// save conflicting PBConstraint as well
-				aggregator_= new PBConstraint(*this, p, a, true);
+				PBConstraint::newPBConstraint(*this, p, a, true, &aggregator_);
+				//aggregator_= new PBConstraint(*this, p, a, true);
 			}
 		}
 		else {
@@ -569,7 +570,8 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			a.reason(*this, p, conflict_);
 			if(strategy_.analyze) {
 				// save conflicting PBConstraint as well
-				aggregator_= new PBConstraint(*this, p, a, true);
+				PBConstraint::newPBConstraint(*this, p, a, true, &aggregator_);
+				//aggregator_= new PBConstraint(*this, p, a, true);
 			}
 			// restore old data
 			assign_.setData(p.var(), saved);
