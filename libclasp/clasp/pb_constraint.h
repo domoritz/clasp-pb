@@ -58,7 +58,9 @@ template<typename S, typename T> struct hash<pair<S, T> >
 
 namespace Clasp {
 
-typedef PodVector<Clause>::type ClauseVec;
+typedef PodVector<Clause*>::type ClauseVec;
+typedef std::pair<uint32, wsum_t> BDDKey;
+typedef std::tr1::unordered_map<BDDKey, ClauseVec> BDDCache;
 
 //! Class implementing learnt Pseudo-Boolean constraints
 /*!
@@ -151,7 +153,7 @@ public:
 	bool multiply(weight_t);
 
 	//! Get the clauses that represent this PBC using BDDs
-	void extractClauses(ClauseVec& clauses) const;
+	ClauseVec extractClauses() const;
 
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
@@ -195,6 +197,8 @@ private:
 		return undo_[up_-1];
 	}
 
+	BDDKey extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const;
+
 	//! Returns the decision level of the last assigned literal
 	//! or 0 if no literal was assigned yet.
 	inline uint32	highestUndoLevel(Solver&) const;
@@ -231,9 +235,11 @@ private:
 			const WeightLitVec& wlv_;
 	};
 
+	// used to cache BDDs
+	mutable BDDCache* memo_;
 };
 
-
+/*
 Literal buildBDD(const PBConstraint& c, int size, int64 sum, int64 material_left, std::tr1::unordered_map<std::pair<int,int64>,Literal>& memo, int max_cost)
 {
 	int64 lower_limit = (c.lo == Int_MIN) ? Int_MIN : c.lo - sum;
@@ -284,5 +290,6 @@ Formula convertToBdd(const Linear& c, int max_cost)
 	}
 	return ret;
 }
+*/
 
 } //namespace Clasp

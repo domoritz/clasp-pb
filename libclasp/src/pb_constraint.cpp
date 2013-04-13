@@ -249,9 +249,51 @@ bool PBConstraint::multiply(weight_t x){
 	return true;
 }
 
-void PBConstraint::extractClauses(ClauseVec &clauses) const
+ClauseVec PBConstraint::extractClauses() const
 {
+	wsum_t material_left = 0;
+	for(LitVec::size_type i= 0; i != size(); ++i){
+		material_left += weight(i);
+	}
+	memo_ = new BDDCache();
+	BDDKey key = extractClauses(size(), 0UL, material_left);
+	ClauseVec clauses = (*memo_)[key];
+	// clear clauses that are not in the result
+	for (BDDCache::iterator i = memo_->begin(); i != memo_->end(); ++i) {
+		if ((*i).first == key) {
+			continue;
+		}
+		ClauseVec& vec = (*i).second;
+		for (ClauseVec::iterator j = vec.begin(); j != vec.end(); ++j) {
+			delete *j;
+		}
+	}
+	delete memo_;
+	return clauses;
+}
 
+BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
+{
+	if (sum >= bound_) {
+		//return true;
+	} else if (sum + material_left < bound_) {
+		//return false;
+	}
+
+	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
+	if (memo_->find(key) == memo_->end()) {
+		size--;
+		material_left -= weight(size);
+		wsum_t hi_sum = lit(size).sign() ? sum : sum + weight(size);
+		wsum_t lo_sum = lit(size).sign() ? sum + weight(size) : sum;
+		BDDKey hi_result = extractClauses(size, hi_sum, material_left);
+		BDDKey lo_result = extractClauses(size, lo_sum, material_left);
+		// TODO; clauses = ITE(lit(size), hi_result, lo_result)
+		ClauseVec clauses;
+		(*memo_)[key] = clauses;
+		return key;
+	}
+	return key;
 }
 
 void PBConstraint::weaken(Solver& s, Literal p){
