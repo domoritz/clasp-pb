@@ -251,6 +251,9 @@ bool PBConstraint::multiply(weight_t x){
 
 ClauseVec PBConstraint::extractClauses() const
 {
+	// we need the max size to encode true and false
+	assert(size() < std::numeric_limits<int>::max());
+
 	wsum_t material_left = 0;
 	for(LitVec::size_type i= 0; i != size(); ++i){
 		material_left += weight(i);
@@ -274,10 +277,17 @@ ClauseVec PBConstraint::extractClauses() const
 
 BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
 {
+	/*
+	 * We encode true and false as:
+	 * true:  (-1, 0)
+	 * false: (-1, 0)
+	 *
+	 * -1 being the numeric max of uint
+	 */
 	if (sum >= bound_) {
-		//return true;
+		return TRUE_CNF;
 	} else if (sum + material_left < bound_) {
-		//return false;
+		return FALSE_CNF;
 	}
 
 	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
@@ -288,6 +298,7 @@ BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_lef
 		wsum_t lo_sum = lit(size).sign() ? sum + weight(size) : sum;
 		BDDKey hi_result = extractClauses(size, hi_sum, material_left);
 		BDDKey lo_result = extractClauses(size, lo_sum, material_left);
+
 		// TODO; clauses = ITE(lit(size), hi_result, lo_result)
 		ClauseVec clauses;
 		(*memo_)[key] = clauses;

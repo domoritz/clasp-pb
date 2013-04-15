@@ -61,6 +61,8 @@ namespace Clasp {
 typedef PodVector<Clause*>::type ClauseVec;
 typedef std::pair<uint32, wsum_t> BDDKey;
 typedef std::tr1::unordered_map<BDDKey, ClauseVec> BDDCache;
+#define FALSE_CNF std::make_pair<uint32, wsum_t>(std::numeric_limits<int>::max(), 0UL)
+#define TRUE_CNF  std::make_pair<uint32, wsum_t>(std::numeric_limits<int>::max(), 0UL)
 
 //! Class implementing learnt Pseudo-Boolean constraints
 /*!
