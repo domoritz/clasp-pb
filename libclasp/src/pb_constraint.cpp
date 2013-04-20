@@ -249,7 +249,7 @@ bool PBConstraint::multiply(weight_t x){
 	return true;
 }
 
-ClauseVec PBConstraint::extractClauses() const
+Formula PBConstraint::extractClauses() const
 {
 	// we need the max size to encode true and false
 	assert(size() < std::numeric_limits<uint32>::max());
@@ -259,13 +259,12 @@ ClauseVec PBConstraint::extractClauses() const
 		material_left += weight(i);
 	}
 	memo_ = new BDDCache();
-	BDDKey key = extractClauses(size(), 0UL, material_left);
-	ClauseVec clauses = (*memo_)[key];
+	Formula f = extractClauses(size(), 0UL, material_left);
 	delete memo_;
-	return clauses;
+	return f;
 }
 
-BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
+Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
 {
 	/*
 	 * We encode true and false as:
@@ -275,66 +274,27 @@ BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_lef
 	 * -1 being the numeric max of uint
 	 */
 	if (sum >= bound_) {
-		return TRUE_CNF;
+		return _1_;
 	} else if (sum + material_left < bound_) {
-		return FALSE_CNF;
+		return _0_;
 	}
 
 	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
+	Formula clauses;
+
 	if (memo_->find(key) == memo_->end()) {
 		size--;
 		material_left -= weight(size);
 		wsum_t hi_sum = lit(size).sign() ? sum : sum + weight(size);
 		wsum_t lo_sum = lit(size).sign() ? sum + weight(size) : sum;
-		BDDKey hi_result = extractClauses(size, hi_sum, material_left);
-		BDDKey lo_result = extractClauses(size, lo_sum, material_left);
+		Formula hi_result = extractClauses(size, hi_sum, material_left);
+		Formula lo_result = extractClauses(size, lo_sum, material_left);
 
-		ClauseVec clauses;
-		ClauseVec clause(1);
-		LightClause c(1); c[0] = lit(size);
-		clause[0] = c;
-		clauses = ite(clause, (*memo_)[hi_result], (*memo_)[lo_result]);
+		int lit = 0; // lit(size);
+		clauses = ITE(var(var(lit)), hi_result, lo_result);
 		(*memo_)[key] = clauses;
-		return key;
-	}
-	return key;
-}
-
-ClauseVec PBConstraint::ite(ClauseVec &c, ClauseVec &t, ClauseVec &f) const
-{
-	//if (c == FALSE_CNF) return f;
-	//if (c == TRUE_CNF) return t;
-	if (t == f) return t;
-
-	ClauseVec clauses = or_(c, f);
-	return and_(t, clauses);
-}
-
-ClauseVec PBConstraint::and_(ClauseVec &cs0, ClauseVec &cs1) const
-{
-	ClauseVec clauses(cs0);
-	clauses.insert(cs1.end(), cs1.begin(), cs1.end());
-	return clauses;
-}
-
-ClauseVec PBConstraint::or_(ClauseVec &cs0, ClauseVec &cs1) const
-{
-	ClauseVec clauses;
-	for (ClauseVec::iterator c0 = cs0.begin(); c0 != cs0.end(); ++c0) {
-		for (ClauseVec::iterator c1 = cs1.begin(); c1 != cs1.end(); ++c1) {
-			clauses.push_back(or_(*c0, *c1));
-		}
 	}
 	return clauses;
-}
-
-LightClause PBConstraint::or_(LightClause &c0, LightClause &c1) const
-{
-	LightClause clause(c0);
-	for (LightClause::iterator it = c1.begin(); it != c1.end(); ++it) {
-		clause.push_back(*it);
-	}
-	return clause;
 }
 
 void PBConstraint::weaken(Solver& s, Literal p){

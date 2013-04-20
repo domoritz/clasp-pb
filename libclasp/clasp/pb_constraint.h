@@ -31,6 +31,7 @@
 #include <clasp/weight_constraint.h>
 #include <clasp/solver.h>
 #include <clasp/clause.h>
+#include <clasp/util/ite/FEnv.h>
 
 // from boost functional
 template <class T>
@@ -58,12 +59,8 @@ template<typename S, typename T> struct hash<pair<S, T> >
 
 namespace Clasp {
 
-typedef PodVector<Literal>::type LightClause;
-typedef PodVector<LightClause>::type ClauseVec;
 typedef std::pair<uint32, wsum_t> BDDKey;
-typedef std::tr1::unordered_map<BDDKey, ClauseVec> BDDCache;
-#define FALSE_CNF std::make_pair<uint32, wsum_t>(std::numeric_limits<int>::max(), 0UL)
-#define TRUE_CNF  std::make_pair<uint32, wsum_t>(std::numeric_limits<int>::max(), 0UL)
+typedef std::tr1::unordered_map<BDDKey, Formula> BDDCache;
 
 //! Class implementing learnt Pseudo-Boolean constraints
 /*!
@@ -156,7 +153,7 @@ public:
 	bool multiply(weight_t);
 
 	//! Get the clauses that represent this PBC using BDDs
-	ClauseVec extractClauses() const;
+	Formula extractClauses() const;
 
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
@@ -200,12 +197,7 @@ private:
 		return undo_[up_-1];
 	}
 
-	ClauseVec ite(ClauseVec& c, ClauseVec& t, ClauseVec &f) const;
-	ClauseVec and_(ClauseVec& cs0, ClauseVec& cs1) const;
-	ClauseVec or_(ClauseVec &cs0, ClauseVec &cs1) const;
-	LightClause or_(LightClause &c0, LightClause &c1) const;
-
-	BDDKey extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const;
+	Formula extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const;
 
 	//! Returns the decision level of the last assigned literal
 	//! or 0 if no literal was assigned yet.
