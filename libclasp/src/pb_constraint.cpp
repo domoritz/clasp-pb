@@ -289,17 +289,25 @@ BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_lef
 		BDDKey hi_result = extractClauses(size, hi_sum, material_left);
 		BDDKey lo_result = extractClauses(size, lo_sum, material_left);
 
-		ClauseVec clauses0, clauses1, clauses;
+		ClauseVec clauses;
 		ClauseVec clause(1);
 		LightClause c(1); c[0] = lit(size);
 		clause[0] = c;
-		clauses0 = (*memo_)[hi_result];
-		clauses1 = or_((*memo_)[lo_result], clause);
-		clauses  = and_(clauses0, clauses1);
+		clauses = ite(clause, (*memo_)[hi_result], (*memo_)[lo_result]);
 		(*memo_)[key] = clauses;
 		return key;
 	}
 	return key;
+}
+
+ClauseVec PBConstraint::ite(ClauseVec &c, ClauseVec &t, ClauseVec &f) const
+{
+	//if (c == FALSE_CNF) return f;
+	//if (c == TRUE_CNF) return t;
+	if (t == f) return t;
+
+	ClauseVec clauses = or_(c, f);
+	return and_(t, clauses);
 }
 
 ClauseVec PBConstraint::and_(ClauseVec &cs0, ClauseVec &cs1) const
