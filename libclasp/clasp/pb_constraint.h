@@ -58,7 +58,8 @@ template<typename S, typename T> struct hash<pair<S, T> >
 
 namespace Clasp {
 
-typedef PodVector<Clause*>::type ClauseVec;
+typedef PodVector<Literal>::type LightClause;
+typedef PodVector<LightClause>::type ClauseVec;
 typedef std::pair<uint32, wsum_t> BDDKey;
 typedef std::tr1::unordered_map<BDDKey, ClauseVec> BDDCache;
 #define FALSE_CNF std::make_pair<uint32, wsum_t>(std::numeric_limits<int>::max(), 0UL)
@@ -198,6 +199,11 @@ private:
 		assert(up_ > 0 && undo_ != 0);
 		return undo_[up_-1];
 	}
+
+	ClauseVec ite(ClauseVec& c, ClauseVec& t, ClauseVec &f) const;
+	ClauseVec and_(ClauseVec& cs0, ClauseVec& cs1) const;
+	ClauseVec or_(ClauseVec &cs0, ClauseVec &cs1) const;
+	LightClause or_(LightClause &c0, LightClause &c1) const;
 
 	BDDKey extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const;
 

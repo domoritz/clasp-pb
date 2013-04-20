@@ -252,7 +252,7 @@ bool PBConstraint::multiply(weight_t x){
 ClauseVec PBConstraint::extractClauses() const
 {
 	// we need the max size to encode true and false
-	assert(size() < std::numeric_limits<int>::max());
+	assert(size() < std::numeric_limits<uint32>::max());
 
 	wsum_t material_left = 0;
 	for(LitVec::size_type i= 0; i != size(); ++i){
@@ -261,16 +261,6 @@ ClauseVec PBConstraint::extractClauses() const
 	memo_ = new BDDCache();
 	BDDKey key = extractClauses(size(), 0UL, material_left);
 	ClauseVec clauses = (*memo_)[key];
-	// clear clauses that are not in the result
-	for (BDDCache::iterator i = memo_->begin(); i != memo_->end(); ++i) {
-		if ((*i).first == key) {
-			continue;
-		}
-		ClauseVec& vec = (*i).second;
-		for (ClauseVec::iterator j = vec.begin(); j != vec.end(); ++j) {
-			delete *j;
-		}
-	}
 	delete memo_;
 	return clauses;
 }
@@ -299,12 +289,44 @@ BDDKey PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_lef
 		BDDKey hi_result = extractClauses(size, hi_sum, material_left);
 		BDDKey lo_result = extractClauses(size, lo_sum, material_left);
 
-		// TODO; clauses = ITE(lit(size), hi_result, lo_result)
-		ClauseVec clauses;
+		ClauseVec clauses0, clauses1, clauses;
+		ClauseVec clause(1);
+		LightClause c(1); c[0] = lit(size);
+		clause[0] = c;
+		clauses0 = (*memo_)[hi_result];
+		clauses1 = or_((*memo_)[lo_result], clause);
+		clauses  = and_(clauses0, clauses1);
 		(*memo_)[key] = clauses;
 		return key;
 	}
 	return key;
+}
+
+ClauseVec PBConstraint::and_(ClauseVec &cs0, ClauseVec &cs1) const
+{
+	ClauseVec clauses(cs0);
+	clauses.insert(cs1.end(), cs1.begin(), cs1.end());
+	return clauses;
+}
+
+ClauseVec PBConstraint::or_(ClauseVec &cs0, ClauseVec &cs1) const
+{
+	ClauseVec clauses;
+	for (ClauseVec::iterator c0 = cs0.begin(); c0 != cs0.end(); ++c0) {
+		for (ClauseVec::iterator c1 = cs1.begin(); c1 != cs1.end(); ++c1) {
+			clauses.push_back(or_(*c0, *c1));
+		}
+	}
+	return clauses;
+}
+
+LightClause PBConstraint::or_(LightClause &c0, LightClause &c1) const
+{
+	LightClause clause(c0);
+	for (LightClause::iterator it = c1.begin(); it != c1.end(); ++it) {
+		clause.push_back(*it);
+	}
+	return clause;
 }
 
 void PBConstraint::weaken(Solver& s, Literal p){
