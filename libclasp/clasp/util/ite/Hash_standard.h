@@ -37,8 +37,8 @@ template <class K> struct Hash  { uint operator () (const K& key)               
 template <class K> struct Equal { bool operator () (const K& key1, const K& key2) const { return key1 == key2; } };
 
 template <class K> struct Hash_params {
-    static uint hash (K key)          { return Hash <K>()(key);        }
-    static bool equal(K key1, K key2) { return Equal<K>()(key1, key2); }
+	static uint hash (K key)          { return Hash <K>()(key);        }
+	static bool equal(K key1, K key2) { return Equal<K>()(key1, key2); }
 };
 
 
