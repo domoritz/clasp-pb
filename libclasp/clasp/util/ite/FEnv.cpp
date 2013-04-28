@@ -19,7 +19,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "FEnv.h"
 
-namespace FEnv {
+namespace ENV {
 vec<NodeData>       nodes;
 Map<NodeData, int>  uniqueness_table;
 
@@ -72,4 +72,5 @@ bool eval(Formula f, AMap<char>& values, CMap<char>& memo)
 
 bool eval(Formula f, AMap<char>& values) {
 	CMap<char> memo(-1);;
-	return eval(f, values, memo); }
+	return eval(f, values, memo);
+}
