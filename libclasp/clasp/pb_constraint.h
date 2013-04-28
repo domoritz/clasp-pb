@@ -18,7 +18,8 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-#pragma once
+#ifndef CLASP_PB_CONSTRAINT_H_INCLUDED
+#define CLASP_PB_CONSTRAINT_H_INCLUDED
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4200) // nonstandard extension used : zero-sized array
@@ -293,3 +294,5 @@ Formula convertToBdd(const Linear& c, int max_cost)
 */
 
 } //namespace Clasp
+
+#endif
