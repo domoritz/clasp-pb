@@ -56,7 +56,10 @@ public:
 	/*!
 	 * \return false if the constraint is initially conflicting w.r.t the current assignment.
 	 */
-	static void newPBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict=false, PBConstraint** out=NULL);
+	static void buildPBConstraint(PBConstraint &pbc, Solver& s, const Literal p, const Antecedent& ant, bool conflict=false);
+
+	//! Resets the members
+	void reset();
 
 	ConstraintType type() const { return Constraint_t::learnt_pb; }
 

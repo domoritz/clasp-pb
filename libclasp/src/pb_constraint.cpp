@@ -28,55 +28,7 @@ namespace Clasp {
 PBConstraint::PBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict):
 bound_(1), slack_(0), pidx_(0), up_(0), undo_(0)
 {
-	const bool generic= (ant.type() == Antecedent::generic_constraint);
-	WeightConstraint* wc;
-
-	if( generic && ant.constraint()->type() == Constraint_t::learnt_pb){
-		PBConstraint* pbc= static_cast<PBConstraint*>(ant.constraint());
-
-		bound_= pbc->bound_;
-		slack_= pbc->slack_;
-
-		for (uint32 i = 0; i != pbc->size(); ++i) {
-			Literal l= pbc->lit(i);
-
-			if (s.value(l.var()) == value_free || s.level(l.var()) != 0 || l == p){
-				lits_.push_back(pbc->lits_[i]);
-			}
-			else if (s.isTrue(l)){
-				bound_-= pbc->weight(i);
-			}
-			else if (s.isFalse(l) && !pbc->litSeen(i)){
-				slack_-= pbc->weight(i);
-			}
-		}
-		if (conflict){
-			// this is a conflicting constraint, but hasn't updated its slack!
-			slack_-= weight(p);
-		}
-	}
-	else if ( generic && (wc= dynamic_cast<WeightConstraint*>(ant.constraint())) != 0 ){
-		wc->extractActivePB(s, lits_, bound_, slack_, p);
-
-		if (conflict){
-			// this is a conflicting constraint, but hasn't updated its slack!
-			slack_-= weight(p);
-		}
-	}
-	else {
-		// This could be a clause, or about anything else...
-		// Let's just use the reason it provides and build a PB constraint from that
-		LitVec reasons;
-		ant.reason(s, p, reasons);
-
-		slack_= -1;
-		lits_.reserve(reasons.size()+1);
-		lits_.push_back(WeightLiteral(p, 1));
-		for(LitVec::size_type i= 0; i != reasons.size(); ++i){
-			lits_.push_back(WeightLiteral(~reasons[i],1));
-			if(s.isTrue(lit(i))) ++slack_;
-		}
-	}
+	buildPBConstraint(*this, s, p, ant, conflict);
 }
 
 PBConstraint::PBConstraint(WeightLitVec lits, wsum_t bound, wsum_t slack):
@@ -106,55 +58,40 @@ void PBConstraint::destroy(Solver* s, bool detach) {
 	::operator delete(mem);
 }
 
-void PBConstraint::newPBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict, PBConstraint** out) {
-	PBConstraint* c;
-
-	#if 0
-	c = new PBConstraint(s, p, ant, conflict);
-	*out = c;
-	return;
-	#endif
-
+void PBConstraint::buildPBConstraint(PBConstraint& pbc, Solver& s, const Literal p, const Antecedent& ant, bool conflict) {
 	const bool generic= (ant.type() == Antecedent::generic_constraint);
 	WeightConstraint* wc;
 
 	if( generic && ant.constraint()->type() == Constraint_t::learnt_pb){
-		PBConstraint* pbc= static_cast<PBConstraint*>(ant.constraint());
-		c = new PBConstraint(pbc->bound(), pbc->slack());
+		PBConstraint* ant_pbc= static_cast<PBConstraint*>(ant.constraint());
 
-		for (uint32 i = 0; i != pbc->size(); ++i) {
-			Literal l= pbc->lit(i);
+		pbc.bound_= ant_pbc->bound_;
+		pbc.slack_= ant_pbc->slack_;
+
+		for (uint32 i = 0; i != ant_pbc->size(); ++i) {
+			Literal l= ant_pbc->lit(i);
 
 			if (s.value(l.var()) == value_free || s.level(l.var()) != 0 || l == p){
-				c->lits_.push_back(pbc->lits_[i]);
+				pbc.lits_.push_back(ant_pbc->lits_[i]);
 			}
 			else if (s.isTrue(l)){
-				c->bound_-= pbc->weight(i);
+				pbc.bound_-= ant_pbc->weight(i);
 			}
-			else if (s.isFalse(l) && !pbc->litSeen(i)){
-				c->slack_-= pbc->weight(i);
+			else if (s.isFalse(l) && !ant_pbc->litSeen(i)){
+				pbc.slack_-= ant_pbc->weight(i);
 			}
 		}
 		if (conflict){
 			// this is a conflicting constraint, but hasn't updated its slack!
-			c->slack_-= c->weight(p);
+			pbc.slack_-= pbc.weight(p);
 		}
 	}
 	else if ( generic && (wc= dynamic_cast<WeightConstraint*>(ant.constraint())) != 0 ){
-		#if 0
-		WeightLitVec lits;
-		wsum_t bound;
-		wsum_t slack;
-		wc->extractActivePB(s, lits, bound, slack, p);
-		c = new PBConstraint(lits, bound, slack);
-		#else
-		c = new PBConstraint();
-		wc->extractActivePB(s, c->lits_, c->bound_, c->slack_, p);
-		#endif
+		wc->extractActivePB(s, pbc.lits_, pbc.bound_, pbc.slack_, p);
 
 		if (conflict){
 			// this is a conflicting constraint, but hasn't updated its slack!
-			c->slack_-= c->weight(p);
+			pbc.slack_-= pbc.weight(p);
 		}
 	}
 	else {
@@ -162,18 +99,25 @@ void PBConstraint::newPBConstraint(Solver& s, const Literal p, const Antecedent&
 		// Let's just use the reason it provides and build a PB constraint from that
 		LitVec reasons;
 		ant.reason(s, p, reasons);
-		c = new PBConstraint(1, -1);
-		c->lits_.reserve(reasons.size()+1);
-		c->lits_.push_back(WeightLiteral(p, 1));
+
+		pbc.slack_= -1;
+		pbc.lits_.reserve(reasons.size()+1);
+		pbc.lits_.push_back(WeightLiteral(p, 1));
 		for(LitVec::size_type i= 0; i != reasons.size(); ++i){
-			c->lits_.push_back(WeightLiteral(~reasons[i],1));
-			if(s.isTrue(c->lit(i)))
-				c->slack_++;
+			pbc.lits_.push_back(WeightLiteral(~reasons[i],1));
+			if(s.isTrue(pbc.lit(i))) ++pbc.slack_;
 		}
 	}
+}
 
-	assert(c);
-	*out = c;
+void PBConstraint::reset()
+{
+	bound_ = 1;
+	slack_ = 0;
+	pidx_ = 0;
+	up_ = 0;
+	undo_ = 0;
+	lits_.clear();
 }
 
 bool PBConstraint::integrate(Solver& s) {
@@ -251,7 +195,14 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 	assert( weight(~l) > 0 && "can't eliminate non-existing literal");
 	assert( slack_ < 0 && "the constraint should be violated");
 
+#define STATIC_VAR_ELIMINATION 0
+#if STATIC_VAR_ELIMINATION
+	static PBConstraint eliminator;
+	eliminator.reset();
+	buildPBConstraint(eliminator, s, l, s.reason(l));
+#else
 	PBConstraint eliminator(s, l, s.reason(l));
+#endif
 
 	weight_t mel= eliminator.weight(l);
 	weight_t mag= weight(~l);
