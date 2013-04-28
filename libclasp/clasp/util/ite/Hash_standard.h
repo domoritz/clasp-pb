@@ -1,3 +1,5 @@
+#include "Global.h"
+
 /*********************************************************************************[Hash_standard.h]
 Copyright (c) 2005-2010, Niklas Een, Niklas Sorensson
 
@@ -19,10 +21,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #ifndef Hash_standard_h
 #define Hash_standard_h
-
-typedef unsigned int uint;
-typedef unsigned short ushort;
-typedef unsigned long ulong;
 
 //=================================================================================================
 // Some Primes...

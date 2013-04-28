@@ -20,10 +20,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "FEnv.h"
 
 namespace FEnv {
-    vec<NodeData>       nodes;
-    Map<NodeData, int>  uniqueness_table;
+	vec<NodeData>       nodes;
+	Map<NodeData, int>  uniqueness_table;
 
-    vec<int>            stack;
+	vec<int>            stack;
 }
 
 
