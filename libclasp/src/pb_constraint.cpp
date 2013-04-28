@@ -509,11 +509,35 @@ bool PBConstraint::locked(const Solver& s) const {
 	return firstImpl_ <= s.decisionLevel();
 }
 
-uint32 PBConstraint::isOpen(const Solver &s, const TypeSet &t, LitVec &freeLits)
+/*
+bool PBConstraint::isSatisfied(const Solver &s, const TypeSet &t, LitVec &freeLits)
+{
+	LitVec tmpl;
+	int32 sum= 0;
+	for(LitVec::size_type i= 0; i != size(); ++i){
+		// litSeen(i) means it's false
+		if(!litSeen(i)){
+			if( s.isTrue(lit(i)) ){
+				sum+= weight(i);
+				if( sum >= bound_ )	return true;
+			}
+			else {
+				assert( s.value(lit(i).var()) == value_free );
+				tmpl.push_back( lit(i) );
+			}
+		}
+	}
+	freeLits= tmpl;
+	return false;
+}
+*/
+
+uint32 PBConstraint::isOpen(const Solver& s, const TypeSet& t, LitVec& freeLits)
 {
 	if (!t.inSet(PBConstraint::type())) {
 		return 0;
 	}
+
 	LitVec tmpl;
 	int32 sum= 0;
 	for(LitVec::size_type i= 0; i != size(); ++i){
@@ -522,8 +546,7 @@ uint32 PBConstraint::isOpen(const Solver &s, const TypeSet &t, LitVec &freeLits)
 			if( s.isTrue(lit(i)) ){
 				sum+= weight(i);
 				if( sum >= bound_ )	return 0;
-			}
-			else {
+			} else {
 				assert( s.value(lit(i).var()) == value_free );
 				tmpl.push_back( lit(i) );
 			}
