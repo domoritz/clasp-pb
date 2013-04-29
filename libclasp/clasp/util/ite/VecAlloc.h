@@ -1,6 +1,7 @@
 #ifndef VecAlloc_h
 #define VecAlloc_h
 
+#include "Global.h"
 #include <typeinfo>
 
 //=================================================================================================

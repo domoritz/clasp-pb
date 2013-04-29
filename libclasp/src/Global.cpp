@@ -22,6 +22,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <cstring>
 #include <cstdio>
 
+#include "clasp/util/ite/Global.h"
+
 
 char* vnsprintf(const char* format, va_list args)
 {

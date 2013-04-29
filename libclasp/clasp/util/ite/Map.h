@@ -26,6 +26,7 @@ datum types, (plus default constructor unless null value is passed to constructo
 #ifndef Map_h
 #define Map_h
 
+#include "Global.h"
 #include "VecAlloc.h"
 #include "Hash_standard.h"
 
