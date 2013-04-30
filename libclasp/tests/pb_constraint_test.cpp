@@ -50,7 +50,8 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
 	CPPUNIT_TEST(testReason);
 	CPPUNIT_TEST(testUpdateConstraint);
-	CPPUNIT_TEST(testClauseExtraction);
+	CPPUNIT_TEST(testClauseExtractionFromPB);
+	CPPUNIT_TEST(testClauseExtractionFromClause);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -260,9 +261,24 @@ public:
 		CPPUNIT_ASSERT(~b == lits[0]);
 	}
 
-	void testClauseExtraction() {
+	void testClauseExtractionFromPB() {
 		PBConstraint::PBConstraint* pbc = createPbConstraint();
 		Formula clauses = pbc->extractClauses();
+		CPPUNIT_ASSERT(clauses != _error_);
+		std::cout << clauses << std::endl;
+		//CPPUNIT_ASSERT_EQUAL(1UL, clauses.size());
+		//CPPUNIT_ASSERT_EQUAL(2U, clauses[0].size());
+	}
+
+	void testClauseExtractionFromClause() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 1));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(c, 1));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 1L);
+		Formula clauses = pbc->extractClauses();
+		CPPUNIT_ASSERT(clauses != _error_);
+		std::cout << clauses << std::endl;
 		//CPPUNIT_ASSERT_EQUAL(1UL, clauses.size());
 		//CPPUNIT_ASSERT_EQUAL(2U, clauses[0].size());
 	}
