@@ -697,7 +697,7 @@ bool Solver::test(Literal p, PostPropagator* c) {
 
 bool Solver::resolveConflict() {
 	assert(hasConflict());
-	if (decisionLevel() > rootLevel_) {
+	while (decisionLevel() > rootLevel_) {
 		if (decisionLevel() != btLevel_ && strategy_.search != SolverStrategies::no_learning) {
 			uint32 uipLevel = analyzeConflict();
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
@@ -720,6 +720,7 @@ bool Solver::resolveConflict() {
 			return backtrack();
 		}
 	}
+	assert(decisionLevel() == rootLevel_);
 	return false;
 }
 
