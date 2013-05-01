@@ -21,6 +21,9 @@
 #include <clasp/clause.h>
 #include <clasp/pb_constraint.h>
 
+#include <stack>
+#include <iostream>
+
 #ifdef _MSC_VER
 #pragma warning (disable : 4996) // 'std::copy': Function call with parameters that may be unsafe
 #endif
@@ -697,6 +700,7 @@ bool Solver::test(Literal p, PostPropagator* c) {
 
 bool Solver::resolveConflict() {
 	assert(hasConflict());
+	std::stack<PBConstraint*> pbResStack;  //not yet integrated PBCs
 	while (decisionLevel() > rootLevel_) {
 		if (decisionLevel() != btLevel_ && strategy_.search != SolverStrategies::no_learning) {
 			uint32 uipLevel = analyzeConflict();
@@ -707,12 +711,27 @@ bool Solver::resolveConflict() {
 			if (pbRes && pbRes->bound() <= 1) {
 				// Subsumed by clause
 				pbRes->destroy(0, false);
-				pbRes = 0;
+				pbRes = NULL;
+			}
+
+			// push pbres if not null
+			if (pbRes) {
+				pbResStack.push(pbRes);
 			}
 
 #pragma message TODO("This is wrong for model enumeration")
-			if (ClauseCreator::create(*this, cc_, ccInfo_) && (!pbRes || pbRes->integrate(*this))) {
-				return true;
+			if (ClauseCreator::create(*this, cc_, ccInfo_)) {
+				while (!pbResStack.empty()) {
+					if (!pbResStack.top()->integrate(*this)) {
+						// could not integrate -> go back to analyze
+						std::cout << "Could not integrate" << pbResStack.top() << std::endl;
+						assert( hasConflict() && "pbRes has to throw a conflict" );
+						break;
+					}
+					pbResStack.pop();
+				}
+				if (pbResStack.empty())
+					return true;
 			}
 			assert( hasConflict() && "pbRes has to throw a conflict" );
 		}
