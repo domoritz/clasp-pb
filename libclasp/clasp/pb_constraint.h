@@ -56,7 +56,10 @@ public:
 	/*!
 	 * \return false if the constraint is initially conflicting w.r.t the current assignment.
 	 */
-	static void newPBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict=false, PBConstraint** out=NULL);
+	static void buildPBConstraint(PBConstraint &pbc, Solver& s, const Literal p, const Antecedent& ant, bool conflict=false);
+
+	//! Resets the members
+	void reset();
 
 	ConstraintType type() const { return Constraint_t::learnt_pb; }
 
@@ -77,7 +80,7 @@ public:
 	bool minimize(Solver& s, Literal p, CCMinRecursive* r);
 
 	//! Returns the literal at position i
-	Literal lit(uint32 i) const {
+	const Literal& lit(uint32 i) const {
 		return lits_[i].first;
 	}
 	//! Returns the weight of the i'th literal
