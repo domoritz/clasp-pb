@@ -195,7 +195,7 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 	assert( weight(~l) > 0 && "can't eliminate non-existing literal");
 	assert( slack_ < 0 && "the constraint should be violated");
 
-#define STATIC_VAR_ELIMINATION 0
+#define STATIC_VAR_ELIMINATION 1
 #if STATIC_VAR_ELIMINATION
 	static PBConstraint eliminator;
 	eliminator.reset();
