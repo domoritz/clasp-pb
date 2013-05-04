@@ -26,7 +26,7 @@
 #include <clasp/clause.h>
 #include <clasp/solver_strategies.h>
 #define private public
-#include <src/pb_constraint.cpp>
+#include <clasp/pb_constraint.h>
 #undef private
 
 #ifdef _MSC_VER
@@ -57,6 +57,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
 	CPPUNIT_TEST(testConstructionFromConflict);
 	CPPUNIT_TEST(testGcd);
+	CPPUNIT_TEST(testNcK);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -381,6 +382,15 @@ public:
 		CPPUNIT_ASSERT_EQUAL(57, gcd(7923, 77577));
 		CPPUNIT_ASSERT_EQUAL(10, gcd(10, 1000));
 		CPPUNIT_ASSERT_EQUAL(17, gcd(45645, 34));
+	}
+
+	void testNcK() {
+		CPPUNIT_ASSERT_EQUAL(0ULL, nChooseK(1, 2));
+		CPPUNIT_ASSERT_EQUAL(2ULL, nChooseK(2, 1));
+		CPPUNIT_ASSERT_EQUAL(1ULL, nChooseK(2, 2));
+		CPPUNIT_ASSERT_EQUAL(1ULL, nChooseK(7, 7));
+		CPPUNIT_ASSERT_EQUAL(120ULL, nChooseK(10, 3));
+		CPPUNIT_ASSERT_EQUAL(10618005270ULL, nChooseK(712, 4));
 	}
 
 private:

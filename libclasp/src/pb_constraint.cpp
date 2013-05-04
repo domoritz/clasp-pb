@@ -159,21 +159,6 @@ bool PBConstraint::integrate(Solver& s) {
 	return true;
 }
 
-namespace {
-	int32 gcd(int32 x, int32 y){
-		assert(x != 0 && y != 0);
-		while ( true ) {
-			if ( !x )
-				return y;
-			y %= x;
-
-			if ( !y )
-				return x;
-			x %= y;
-		}
-	}
-}
-
 void PBConstraint::varElimination(Solver& s, Literal l){
 	// TODO: was soll das hier?
 	assert( undo_ == 0 && "the constraint is not integrated into a solver yet");
@@ -266,13 +251,6 @@ Formula PBConstraint::extractClauses() const
 
 Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
 {
-	/*
-	 * We encode true and false as:
-	 * true:  (-1, 0)
-	 * false: (-1, 0)
-	 *
-	 * -1 being the numeric max of uint
-	 */
 	if (sum >= bound_) {
 		return _1_;
 	} else if (sum + material_left < bound_) {
