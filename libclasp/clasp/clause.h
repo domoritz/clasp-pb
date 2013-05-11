@@ -224,7 +224,7 @@ public:
 		clause_not_conflict  = 16, /**< integrate only if clause is not conflicting */
 		clause_no_release    = 32, /**< do not call release on shared literals */
 		clause_int_lbd       = 64, /**< compute lbd when integrating asserting clauses */
-		clause_known_order   = 128,/**< assume clause is already ordered w.r.t watches */
+		clause_known_order   = 128 /**< assume clause is already ordered w.r.t watches */
 	};
 
 	//! Creates a clause from the literals given in lits.
