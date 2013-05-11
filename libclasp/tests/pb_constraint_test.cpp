@@ -278,7 +278,7 @@ public:
 		wlits.push_back(WeightLiteral(a, 1));
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(c, 1));
-		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(*solver, wlits, 1L);
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
 		Formula clauses = pbc->extractClauses();
 		CPPUNIT_ASSERT(clauses != _error_);
 		std::cout << clauses << std::endl;
