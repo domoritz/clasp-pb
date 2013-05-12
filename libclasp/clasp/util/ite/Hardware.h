@@ -21,11 +21,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Hardware_h
 
 #include "FEnv.h"
-#include "clasp/solver.h"
+#include "ClauseCollector.h"
+#include "SolverTypes.h"
 
 //=================================================================================================
-
-namespace Clasp {
 
 /*int  estimatedAdderCost(const Linear& c);
 void oddEvenSort(vec<Formula>& fs);
@@ -33,10 +32,8 @@ void rippleAdder(const vec<Formula>& xs, const vec<Formula>& ys, vec<Formula>& o
 void addPb(const vec<Formula>& ps, const vec<Int>& Cs_, vec<Formula>& out, int bits);
 */
 
-void clausify(Solver& s, const vec<Formula>& fs, vec<Lit>& out);
-void clausify(Solver& s, const vec<Formula>& fs);
-
-}
+void clausify(ClauseCollector& s, const vec<Formula>& fs, vec<Lit>& out);
+void clausify(ClauseCollector& s, const vec<Formula>& fs);
 
 //=================================================================================================
 #endif
