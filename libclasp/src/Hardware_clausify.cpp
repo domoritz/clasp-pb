@@ -183,23 +183,18 @@ Lit Clausifier::basicClausify(Formula f)
 }
 
 
-void clausify(ClauseCollector& s, const vec<Formula>& fs, vec<Lit>& out)
+void clausify(ClauseCollector& s, const Formula& f, Lit& out)
 {
     Clausifier c(s);
-
-    for (int i = 0; i < fs.size(); i++)
-        c.usage(fs[i]);
-
-	for (int i = 0; i < fs.size(); i++)
-		out.push(c.basicClausify(fs[i]));
+	c.usage(f);
+	out = c.basicClausify(f);
 }
 
 
-void clausify(ClauseCollector& s, const vec<Formula>& fs)
+void clausify(ClauseCollector& s, const Formula& f)
 {
-    vec<Lit>  out;
-    clausify(s, fs, out);
-	//for (int i = 0; i < out.size(); i++)
-	//    s.addUnit(out[i]);
+	Lit out;
+	clausify(s, f, out);
+	s.addUnit(out);
 }
 

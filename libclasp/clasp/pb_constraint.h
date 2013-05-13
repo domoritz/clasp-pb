@@ -34,6 +34,7 @@
 #include <clasp/clause.h>
 #include <clasp/util/helpers.h>
 #include <clasp/util/ite/FEnv.h>
+#include <clasp/util/ite/ClauseCollector.h>
 
 // from boost functional
 template <class T>
@@ -166,7 +167,7 @@ public:
 	bool multiply(weight_t);
 
 	//! Get the clauses that represent this PBC using BDDs
-	Formula extractClauses() const;
+	ClauseVec extractClauses() const;
 
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);

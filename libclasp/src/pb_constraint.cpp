@@ -22,6 +22,7 @@
 
 #include <clasp/solver.h>
 #include <clasp/pb_constraint.h>
+#include <clasp/util/ite/hardware.h>
 
 namespace Clasp {
 
@@ -256,7 +257,7 @@ bool PBConstraint::multiply(weight_t x){
 	return true;
 }
 
-Formula PBConstraint::extractClauses() const
+ClauseVec PBConstraint::extractClauses() const
 {
 	// we need the max size to encode true and false
 	assert(size() < std::numeric_limits<uint32>::max());
@@ -266,9 +267,13 @@ Formula PBConstraint::extractClauses() const
 		material_left += weight(i);
 	}
 	memo_ = new BDDCache();
-	Formula f = extractClauses(size(), 0UL, material_left);
+	Formula formula = extractClauses(size(), 0UL, material_left);
+	assert(formula != _error_);
 	delete memo_;
-	return f;
+
+	ClauseCollector collector;
+	clausify(collector, formula);
+	return collector.clauses();
 }
 
 Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
@@ -280,7 +285,7 @@ Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_le
 	}
 
 	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
-	Formula clauses;
+	Formula formula;
 
 	if (memo_->find(key) == memo_->end()) {
 		size--;
@@ -291,10 +296,10 @@ Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_le
 		Formula lo_result = extractClauses(size, lo_sum, material_left);
 
 		int lit = 0; // lit(size);
-		clauses = ITE(var(var(lit)), hi_result, lo_result);
-		(*memo_)[key] = clauses;
+		formula = ITE(var(var(lit)), hi_result, lo_result);
+		(*memo_)[key] = formula;
 	}
-	return clauses;
+	return formula;
 }
 
 void PBConstraint::weaken(Solver& s, Literal p){
