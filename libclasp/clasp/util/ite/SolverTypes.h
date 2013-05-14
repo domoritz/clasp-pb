@@ -74,12 +74,5 @@ macro uint64 abstLit(Lit p) { return ((uint64)1) << (index(p) & 63); }
 #define L_LIT    "%sx%d"
 #define L_lit(p) sign(p)?"~":"", var(p)
 
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-struct BasicSolverStats {
-    int64   starts, decisions, propagations, inspects, conflicts;
-    BasicSolverStats(void) : starts(0), decisions(0), propagations(0), inspects(0), conflicts(0) { }
-};
-
 //=================================================================================================
 #endif
