@@ -211,7 +211,7 @@ private:
 		return undo_[up_-1];
 	}
 
-	Formula extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const;
+	Formula buildBDD(uint32 size, wsum_t sum, wsum_t material_left) const;
 
 	//! Returns the decision level of the last assigned literal
 	//! or 0 if no literal was assigned yet.

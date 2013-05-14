@@ -267,7 +267,7 @@ ClauseVec PBConstraint::extractClauses() const
 		material_left += weight(i);
 	}
 	memo_ = new BDDCache();
-	Formula formula = extractClauses(size(), 0UL, material_left);
+	Formula formula = buildBDD(size(), 0UL, material_left);
 	assert(formula != _error_);
 	delete memo_;
 
@@ -276,7 +276,7 @@ ClauseVec PBConstraint::extractClauses() const
 	return collector.clauses();
 }
 
-Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_left) const
+Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left) const
 {
 	if (sum >= bound_) {
 		return _1_;
@@ -292,8 +292,8 @@ Formula PBConstraint::extractClauses(uint32 size, wsum_t sum, wsum_t material_le
 		material_left -= weight(size);
 		wsum_t hi_sum = lit(size).sign() ? sum : sum + weight(size);
 		wsum_t lo_sum = lit(size).sign() ? sum + weight(size) : sum;
-		Formula hi_result = extractClauses(size, hi_sum, material_left);
-		Formula lo_result = extractClauses(size, lo_sum, material_left);
+		Formula hi_result = buildBDD(size, hi_sum, material_left);
+		Formula lo_result = buildBDD(size, lo_sum, material_left);
 
 		int lit = 0; // lit(size);
 		formula = ITE(var(var(lit)), hi_result, lo_result);
