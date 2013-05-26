@@ -22,8 +22,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 struct Clausifier
 {
 	Clasp::ClauseCollector&      s;
-	vec<Lit>     tmp_clause;
-    vec<Formula> tmp_marked;
+	std::vector<Lit>     tmp_clause;
+	std::vector<Formula> tmp_marked;
 
 	Clausifier(Clasp::ClauseCollector& _s) : s(_s) {}
 
@@ -33,16 +33,16 @@ struct Clausifier
     FMap<bool>   seen;
 
     inline void clause(Lit a, Lit b) {
-        tmp_clause.clear(); tmp_clause.push(a); tmp_clause.push(b); s.addClause(tmp_clause); }
+		tmp_clause.clear(); tmp_clause.push_back(a); tmp_clause.push_back(b); s.addClause(tmp_clause); }
     inline void clause(Lit a, Lit b, Lit c) {
-        tmp_clause.clear(); tmp_clause.push(a); tmp_clause.push(b); tmp_clause.push(c); s.addClause(tmp_clause); }
+		tmp_clause.clear(); tmp_clause.push_back(a); tmp_clause.push_back(b); tmp_clause.push_back(c); s.addClause(tmp_clause); }
     inline void clause(Lit a, Lit b, Lit c, Lit d) {
-        tmp_clause.clear(); tmp_clause.push(a); tmp_clause.push(b); tmp_clause.push(c); tmp_clause.push(d); s.addClause(tmp_clause); }
+		tmp_clause.clear(); tmp_clause.push_back(a); tmp_clause.push_back(b); tmp_clause.push_back(c); tmp_clause.push_back(d); s.addClause(tmp_clause); }
 
 
     void  usage  (Formula f);
-    void _collect(Formula f, vec<Formula>& out);
-    void  collect(Formula f, vec<Formula>& out);
+	void _collect(Formula f, std::vector<Formula>& out);
+	void  collect(Formula f, std::vector<Formula> &out);
 
     Lit   basicClausify   (Formula f);
     Lit   polarityClausify(Formula f);
@@ -71,7 +71,7 @@ void Clausifier::usage(Formula f)
     }
 }
 
-void Clausifier::collect(Formula f, vec<Formula>& out)
+void Clausifier::collect(Formula f, std::vector<Formula>& out)
 {
     tmp_marked.clear();
     _collect(left(f), out);
@@ -80,17 +80,17 @@ void Clausifier::collect(Formula f, vec<Formula>& out)
         seen.set(tmp_marked[i],false);
 }
 
-void Clausifier::_collect(Formula f, vec<Formula>& out)
+void Clausifier::_collect(Formula f, std::vector<Formula> &out)
 {
     if (!seen.at(f)){
         seen.set(f,true);
-        tmp_marked.push(f);
+		tmp_marked.push_back(f);
         if (Bin_p(f) && op(f) == op_And && !sign(f) && occ.at(f) == 1){
             _collect(left(f) ,out);
             _collect(right(f),out);
         }
         else
-            out.push(f);
+			out.push_back(f);
     }
 }
 
@@ -120,17 +120,17 @@ Lit Clausifier::polarityClausify(Formula f)
 #endif
 		if (Bin_p(f)){
 			if (op(f) == op_And){
-				vec<Formula> conj;
+				std::vector<Formula> conj;
 				collect(f, conj);
 				assert(conj.size() > 1);
 				if (!sign(f)){
 					for (int i = 0; i < conj.size(); i++)
 						clause(~result,polarityClausify(conj[i]));
 				}else{
-					vec<Lit> ls;
-					ls.push(result);
+					std::vector<Lit> ls;
+					ls.push_back(result);
 					for (int i = 0; i < conj.size(); i++)
-						ls.push(polarityClausify(~conj[i]));
+						ls.push_back(polarityClausify(~conj[i]));
 					s.addClause(ls);
 				}
 				//printf("and: %d = ", var(result));
@@ -238,16 +238,16 @@ Lit Clausifier::basicClausify(Formula f)
         if (Bin_p(f)){
 
             if (op(f) == op_And){
-                vec<Formula> conj;
+				std::vector<Formula> conj;
                 collect(f, conj);
                 assert(conj.size() > 1);
                 for (int i = 0; i < conj.size(); i++)
                     clause(~p,basicClausify(conj[i]));
 
                 tmp_clause.clear();
-                tmp_clause.push(p);
+				tmp_clause.push_back(p);
                 for (int i = 0; i < conj.size(); i++)
-                    tmp_clause.push(~basicClausify(conj[i]));
+					tmp_clause.push_back(~basicClausify(conj[i]));
                 s.addClause(tmp_clause);
             }else{
 

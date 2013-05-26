@@ -58,7 +58,7 @@ struct NodeData {
 	bool operator == (const NodeData& other) const { return data0 == other.data0 && data1 == other.data1 && data2 == other.data2; }
 };
 
-extern vec<NodeData>       nodes;
+extern std::vector<NodeData>       nodes;
 extern Map<NodeData, int>  uniqueness_table;
 }
 
@@ -149,14 +149,14 @@ macro ENV::NodeData FA_newData(bool isCarry, FML FA_x, FML FA_y, FML FA_c) {
 namespace ENV {
 macro FML new_helper(ENV::NodeData node, bool sign) {
 	int index = ENV::nodes.size();
-	ENV::nodes.push(node);
+	ENV::nodes.push_back(node);
 	return ENV::Comp_new(index, sign); }
 
 macro FML newS_helper(ENV::NodeData node, bool sign) {
 	int index;
 	if (!uniqueness_table.peek(node, index)){
 		index = ENV::nodes.size();
-		ENV::nodes.push(node);
+		ENV::nodes.push_back(node);
 		uniqueness_table.set(node, index); }
 	return ENV::Comp_new(index, sign); }
 }
@@ -346,16 +346,16 @@ macro Formula ITE(Formula c, Formula t, Formula f)
 bool eval(Formula f, AMap<char>& values);
 
 namespace FEnv {
-extern vec<int> stack;
+extern std::vector<int> stack;
 macro void clear() { nodes.clear(); uniqueness_table.clear(); }
-macro void push()  { stack.push(nodes.size()); }
+macro void push()  { stack.push_back(nodes.size()); }
 macro void pop()   {
-	while (nodes.size() > stack.last())
-		uniqueness_table.remove(nodes.last()),
-				nodes.pop(); }
-macro void keep()  { stack.pop(); }
-macro int  topSize() {
-	return (stack.size() == 0) ? nodes.size() : nodes.size() - stack.last(); }
+	while (nodes.size() > stack.back())
+		uniqueness_table.remove(nodes.back()),
+				nodes.pop_back(); }
+macro void keep()  { stack.pop_back(); }
+macro uint  topSize() {
+	return (stack.size() == 0) ? nodes.size() : nodes.size() - stack.back(); }
 }
 
 

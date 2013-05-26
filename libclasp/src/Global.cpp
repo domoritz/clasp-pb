@@ -62,14 +62,14 @@ macro bool hasChar(cchar* text, int chr) {
 	while (*text != 0) if (*text++ == chr) return true;
 	return false; }
 
-void splitString(cchar* text, cchar* seps, vec<char*>& out)
+void splitString(cchar* text, cchar* seps, std::vector<char*>& out)
 {
 	while (hasChar(seps, *text)) text++;
 	if (*text == 0) return;
 	cchar* start = text;
 	for(;;){
 		if (*text == 0 || hasChar(seps, *text)){
-			out.push(xstrndup(start, text-start));
+			out.push_back(xstrndup(start, text-start));
 			while (hasChar(seps, *text)) text++;
 			if (*text == 0) return;
 			start = text;

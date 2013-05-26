@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 
 class BitMap {
-	vec<unsigned>   v;
+	std::vector<unsigned>   v;
 	bool            bool_null;
 
 	unsigned word(int index) const { return (unsigned)index / (sizeof(int)*8); }
@@ -46,7 +46,7 @@ public:
 		else                                   return v[word(index)] & mask(index); }
 
 	void set(int index, bool value) {
-		if (word(index) >= (unsigned)v.size()) assert(index >= 0), v.growTo(word(index)+1, -(int)bool_null);
+		if (word(index) >= (unsigned)v.size()) assert(index >= 0), v.resize(word(index)+1, -(int)bool_null);
 		if (value == false)
 			v[word(index)] &= ~mask(index);
 		else
@@ -58,7 +58,7 @@ public:
 
 template <class T>
 class VecMap {
-	vec<T>  v;
+	std::vector<T>  v;
 	T       T_null;
 
 public:
@@ -74,7 +74,7 @@ public:
 		else                                       return v[index];  }
 
 	void set(int index, T value) {
-		if ((unsigned)index >= (unsigned)v.size()) assert(index >= 0), v.growTo(index+1, T_null);
+		if ((unsigned)index >= (unsigned)v.size()) assert(index >= 0), v.resize(index+1, T_null);
 		v[index] = value; }
 
 	void clear(void) { v.clear(); }

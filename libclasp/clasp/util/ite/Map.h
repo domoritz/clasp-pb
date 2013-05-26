@@ -134,15 +134,15 @@ public:
 	// Export:
 
 
-	void domain(vec<K>& result) const {
+	void domain(std::vector<K>& result) const {
 		for (int i = 0; i < capacity; i++)
 			for (Cell* p = table[i]; p != NULL; p = p->next)
 				result.push(p->key); }
-	void range (vec<D>& result) const {
+	void range (std::vector<D>& result) const {
 		for (int i = 0; i < capacity; i++)
 			for (Cell* p = table[i]; p != NULL; p = p->next)
 				result.push(p->datum); }
-	void pairs (vec<Pair<K,D> >& result) const {
+	void pairs (std::vector<std::pair<K,D> >& result) const {
 		for (int i = 0; i < capacity; i++)
 			for (Cell* p = table[i]; p != NULL; p = p->next)
 				result.push(Pair_new(p->key, p->datum)); }
