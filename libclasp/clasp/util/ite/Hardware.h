@@ -32,8 +32,8 @@ void rippleAdder(const vec<Formula>& xs, const vec<Formula>& ys, vec<Formula>& o
 void addPb(const vec<Formula>& ps, const vec<Int>& Cs_, vec<Formula>& out, int bits);
 */
 
-void clausify(ClauseCollector& s, const Formula& fs, Lit &out);
-void clausify(ClauseCollector& s, const Formula& fs);
+void clausify(Clasp::ClauseCollector& s, const Formula& fs, Lit &out);
+void clausify(Clasp::ClauseCollector& s, const Formula& fs);
 
 //=================================================================================================
 #endif

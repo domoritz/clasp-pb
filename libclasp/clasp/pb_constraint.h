@@ -167,7 +167,7 @@ public:
 	bool multiply(weight_t);
 
 	//! Get the clauses that represent this PBC using BDDs
-	ClauseVec extractClauses() const;
+	bool extractClauses(Solver &s, ClauseVec& clauses) const;
 
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
@@ -211,7 +211,7 @@ private:
 		return undo_[up_-1];
 	}
 
-	Formula buildBDD(uint32 size, wsum_t sum, wsum_t material_left) const;
+	Formula buildBDD(uint32 size, wsum_t sum, wsum_t material_left, int max_cost) const;
 
 	//! Returns the decision level of the last assigned literal
 	//! or 0 if no literal was assigned yet.

@@ -22,7 +22,8 @@
 
 #include <clasp/solver.h>
 #include <clasp/pb_constraint.h>
-#include <clasp/util/ite/hardware.h>
+#include <clasp/util/ite/Hardware.h>
+#include <iostream>
 
 namespace Clasp {
 
@@ -257,7 +258,7 @@ bool PBConstraint::multiply(weight_t x){
 	return true;
 }
 
-ClauseVec PBConstraint::extractClauses() const
+bool PBConstraint::extractClauses(Solver& s, ClauseVec &clauses) const
 {
 	// we need the max size to encode true and false
 	assert(size() < std::numeric_limits<uint32>::max());
@@ -267,39 +268,62 @@ ClauseVec PBConstraint::extractClauses() const
 		material_left += weight(i);
 	}
 	memo_ = new BDDCache();
-	Formula formula = buildBDD(size(), 0UL, material_left);
-	assert(formula != _error_);
+	Formula formula = buildBDD(size(), 0UL, material_left, 1e10);
+
+	for (BDDCache::const_iterator it = memo_->begin(); it != memo_->end(); ++it)
+	{
+		std::cout << "(" << it->first.first << "," << it->first.second << ") " << it->second << std::endl;
+	}
+
 	delete memo_;
 
-	ClauseCollector collector;
+	assert(formula != _error_);
+	if (formula == _undef_) {
+		return false;
+	}
+
+	Clasp::ClauseCollector collector(s);
 	clausify(collector, formula);
-	return collector.clauses();
+	clauses = collector.clauses();
+	for (int i = 0; i < clauses.size(); ++i) {
+		std::cout << "clause: " << clauses[i].size() << std::endl;
+	}
+	return true;
 }
 
-Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left) const
+Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left, int max_cost) const
 {
 	if (sum >= bound_) {
 		return _1_;
 	} else if (sum + material_left < bound_) {
 		return _0_;
+	} else if (FEnv::topSize() > max_cost) {
+		return _undef_;
 	}
 
 	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
-	Formula formula;
+	BDDCache::const_iterator it = memo_->find(key);
 
-	if (memo_->find(key) == memo_->end()) {
+	if (it == memo_->end()) {
+		assert(size != 0);
+		Formula formula;
 		size--;
 		material_left -= weight(size);
 		wsum_t hi_sum = lit(size).sign() ? sum : sum + weight(size);
 		wsum_t lo_sum = lit(size).sign() ? sum + weight(size) : sum;
-		Formula hi_result = buildBDD(size, hi_sum, material_left);
-		Formula lo_result = buildBDD(size, lo_sum, material_left);
+		Formula hi_result = buildBDD(size, hi_sum, material_left, max_cost);
+		if (hi_result == _undef_) return _undef_;
+		Formula lo_result = buildBDD(size, lo_sum, material_left, max_cost);
+		if (lo_result == _undef_) return _undef_;
 
-		int lit = 0; // lit(size);
-		formula = ITE(var(var(lit)), hi_result, lo_result);
+		int l = lit(size).index();
+		formula = ITE(var(var(l)), hi_result, lo_result);
+		//memo_->insert(std::pair<BDDKey, Formula>(key, formula));
 		(*memo_)[key] = formula;
+		return formula;
+	} else {
+		return it->second;
 	}
-	return formula;
 }
 
 void PBConstraint::weaken(Solver& s, Literal p){
@@ -525,16 +549,6 @@ bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
 		}
 	}
 	return true;
-}
-
-std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& pbc)
-{
-	cout << "PB Constraint [ ";
-	for (uint32 i = 0; i < pbc.size(); ++i) {
-		cout << std::showpos << pbc.weight(i) << " x" << pbc.lit(i).index() << " ";
-	}
-	cout << std::noshowpos << ">= " << pbc.bound() << " ], Slack: " << pbc.slack();
-	return cout;
 }
 
 } //namespace Clasp

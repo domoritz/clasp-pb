@@ -24,14 +24,6 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestAssert.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <clasp/literal.h>
-
-namespace Clasp {
-inline std::ostream& operator<<(std::ostream& os, Literal p) {
-	if (p.sign()) os << "-";
-	os << p.var();
-	return os;
-}
-}
+#include <clasp/util/streamhelper.h>
 
 #endif

@@ -28,6 +28,7 @@
 #define private public
 #include <clasp/pb_constraint.h>
 #undef private
+#include "test.h"
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4267) //  conversion from 'size_t' to unsigned int
@@ -279,8 +280,10 @@ public:
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(c, 1));
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
-		ClauseVec clauses = pbc->extractClauses();
-		std::cout << clauses << std::endl;
+		std::cout << *pbc << std::endl;
+		ClauseVec clauses;
+		bool ret = pbc->extractClauses(*solver, clauses);
+		CPPUNIT_ASSERT(ret);
 		CPPUNIT_ASSERT_EQUAL(1, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(3, clauses[0].size());
 	}
