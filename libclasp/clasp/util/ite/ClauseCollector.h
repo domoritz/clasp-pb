@@ -9,9 +9,8 @@
 
 namespace Clasp {
 
-// TODO: use std::vector
-typedef vec<Lit> LightClause;
-typedef vec<LightClause> ClauseVec;
+typedef std::vector<Lit> LightClause;
+typedef std::vector<LightClause> ClauseVec;
 
 /**
  * A class to aggregate the clauses that were extracted during the
@@ -28,11 +27,11 @@ public:
 
 	void addClause(LightClause &clause) {
 		std::cout << "push clause of size " << clause.size() << ":";
-		for (int i = 0; i < clause.size(); ++i) {
+		for (uint i = 0; i < clause.size(); ++i) {
 			std::cout << " " << (sign(clause[i]) ? "-" : "") << var(clause[i]) ;
 		}
 		std::cout << std::endl;
-		clauses_.push(clause);
+		clauses_.push_back(clause);
 	}
 
 	Var newVar() {
@@ -46,14 +45,11 @@ public:
 
 	void addUnit(Lit l) {
 		LightClause unitClause;
-		unitClause.push(l);
+		unitClause.push_back(l);
 		addClause(unitClause);
 	}
 
 	ClauseVec clauses() {
-		for (int i = 0; i < clauses_.size(); ++i) {
-			std::cout << "clause: " << clauses_[i].size() << std::endl;
-		}
 		return clauses_;
 	}
 

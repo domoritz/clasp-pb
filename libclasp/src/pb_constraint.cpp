@@ -269,12 +269,6 @@ bool PBConstraint::extractClauses(Solver& s, ClauseVec &clauses) const
 	}
 	memo_ = new BDDCache();
 	Formula formula = buildBDD(size(), 0UL, material_left, 1e10);
-
-	for (BDDCache::const_iterator it = memo_->begin(); it != memo_->end(); ++it)
-	{
-		std::cout << "(" << it->first.first << "," << it->first.second << ") " << it->second << std::endl;
-	}
-
 	delete memo_;
 
 	assert(formula != _error_);
@@ -285,13 +279,10 @@ bool PBConstraint::extractClauses(Solver& s, ClauseVec &clauses) const
 	Clasp::ClauseCollector collector(s);
 	clausify(collector, formula);
 	clauses = collector.clauses();
-	for (int i = 0; i < clauses.size(); ++i) {
-		std::cout << "clause: " << clauses[i].size() << std::endl;
-	}
 	return true;
 }
 
-Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left, int max_cost) const
+Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left, uint max_cost) const
 {
 	if (sum >= bound_) {
 		return _1_;
@@ -318,7 +309,6 @@ Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left, in
 
 		int l = lit(size).index();
 		formula = ITE(var(var(l)), hi_result, lo_result);
-		//memo_->insert(std::pair<BDDKey, Formula>(key, formula));
 		(*memo_)[key] = formula;
 		return formula;
 	} else {

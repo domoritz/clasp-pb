@@ -280,12 +280,13 @@ public:
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(c, 1));
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
-		std::cout << *pbc << std::endl;
+		//std::cout << *pbc << std::endl;
 		ClauseVec clauses;
 		bool ret = pbc->extractClauses(*solver, clauses);
 		CPPUNIT_ASSERT(ret);
-		CPPUNIT_ASSERT_EQUAL(1, clauses.size());
-		CPPUNIT_ASSERT_EQUAL(3, clauses[0].size());
+		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
+		CPPUNIT_ASSERT_EQUAL(4UL, clauses[0].size());
+		CPPUNIT_ASSERT_EQUAL(1UL, clauses[1].size());
 	}
 
 	void testSimplePropagation() {
