@@ -266,12 +266,13 @@ public:
 	}
 
 	void testClauseExtractionFromPB() {
-		/*PBConstraint::PBConstraint* pbc = createPbConstraint();
-		Formula clauses = pbc->extractClauses();
-		CPPUNIT_ASSERT(clauses != _error_);
-		std::cout << clauses << std::endl;
-		//CPPUNIT_ASSERT_EQUAL(1UL, clauses.size());
-		//CPPUNIT_ASSERT_EQUAL(2U, clauses[0].size());*/
+		PBConstraint::PBConstraint* pbc = createPbConstraint();
+		std::cout << *pbc << std::endl;
+		ClauseVec clauses;
+		bool ret = pbc->extractClauses(*solver, clauses);
+		CPPUNIT_ASSERT(ret);
+		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
+		CPPUNIT_ASSERT_EQUAL(3UL, clauses[0].size());
 	}
 
 	void testClauseExtractionFromClause() {
@@ -280,9 +281,12 @@ public:
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(c, 1));
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
-		//std::cout << *pbc << std::endl;
+		std::cout << *pbc << std::endl;
 		ClauseVec clauses;
 		bool ret = pbc->extractClauses(*solver, clauses);
+		//solver->sharedContext()->addVar(Var_t::atom_var);
+		//Literal p(solver->numVars()+1, true);
+		//solver->addUnary(p, Constraint_t::learnt_other);
 		CPPUNIT_ASSERT(ret);
 		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(4UL, clauses[0].size());
