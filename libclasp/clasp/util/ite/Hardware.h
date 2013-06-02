@@ -23,6 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "FEnv.h"
 #include "ClauseCollector.h"
 #include "SolverTypes.h"
+#include "Global.h"
 
 //=================================================================================================
 
@@ -31,6 +32,9 @@ void oddEvenSort(vec<Formula>& fs);
 void rippleAdder(const vec<Formula>& xs, const vec<Formula>& ys, vec<Formula>& out);
 void addPb(const vec<Formula>& ps, const vec<Int>& Cs_, vec<Formula>& out, int bits);
 */
+
+
+typedef std::vector<Formula> formulaVec;
 
 void clausify(Clasp::ClauseCollector& s, const Formula& fs, Lit &out);
 void clausify(Clasp::ClauseCollector& s, const Formula& fs);

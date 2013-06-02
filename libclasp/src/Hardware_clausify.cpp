@@ -23,7 +23,7 @@ struct Clausifier
 {
 	Clasp::ClauseCollector&      s;
 	std::vector<Lit>     tmp_clause;
-	std::vector<Formula> tmp_marked;
+	formulaVec           tmp_marked;
 
 	Clausifier(Clasp::ClauseCollector& _s) : s(_s) {}
 
@@ -76,7 +76,7 @@ void Clausifier::collect(Formula f, std::vector<Formula>& out)
     tmp_marked.clear();
     _collect(left(f), out);
     _collect(right(f),out);
-    for (int i = 0; i < tmp_marked.size(); i++)
+	for (formulaVec::size_type i = 0; i < tmp_marked.size(); i++)
         seen.set(tmp_marked[i],false);
 }
 
@@ -120,16 +120,16 @@ Lit Clausifier::polarityClausify(Formula f)
 #endif
 		if (Bin_p(f)){
 			if (op(f) == op_And){
-				std::vector<Formula> conj;
+				formulaVec conj;
 				collect(f, conj);
 				assert(conj.size() > 1);
 				if (!sign(f)){
-					for (int i = 0; i < conj.size(); i++)
+					for (formulaVec::size_type i = 0; i < conj.size(); i++)
 						clause(~result,polarityClausify(conj[i]));
 				}else{
 					std::vector<Lit> ls;
 					ls.push_back(result);
-					for (int i = 0; i < conj.size(); i++)
+					for (formulaVec::size_type i = 0; i < conj.size(); i++)
 						ls.push_back(polarityClausify(~conj[i]));
 					s.addClause(ls);
 				}
@@ -238,15 +238,15 @@ Lit Clausifier::basicClausify(Formula f)
         if (Bin_p(f)){
 
             if (op(f) == op_And){
-				std::vector<Formula> conj;
+				formulaVec conj;
                 collect(f, conj);
                 assert(conj.size() > 1);
-                for (int i = 0; i < conj.size(); i++)
+				for (formulaVec::size_type i = 0; i < conj.size(); i++)
                     clause(~p,basicClausify(conj[i]));
 
                 tmp_clause.clear();
 				tmp_clause.push_back(p);
-                for (int i = 0; i < conj.size(); i++)
+				for (formulaVec::size_type i = 0; i < conj.size(); i++)
 					tmp_clause.push_back(~basicClausify(conj[i]));
                 s.addClause(tmp_clause);
             }else{

@@ -22,7 +22,9 @@ public:
 	ClauseCollector(Solver& s) :
 		vars_(0),
 		solver_(s)
-	{}
+	{
+		vars_ = solver_.numVars();
+	}
 	~ClauseCollector() {}
 
 	void addClause(LightClause &clause) {
@@ -35,8 +37,9 @@ public:
 	}
 
 	Var newVar() {
-		std::cout << "new var " << solver_.numVars() + 1 << std::endl;
-		return solver_.numVars() + 1;
+		Var newVar = ++vars_;
+		std::cout << "new var " << newVar << std::endl;
+		return newVar;
 	}
 
 	bool varElimed(Var) const {
