@@ -52,7 +52,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testReason);
 	CPPUNIT_TEST(testUpdateConstraint);
 	CPPUNIT_TEST(testClauseExtractionFromPB);
-	CPPUNIT_TEST(testClauseExtractionFromClause);
+	CPPUNIT_TEST(testClauseExtractionFromDisguisedClause);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -266,27 +266,28 @@ public:
 	}
 
 	void testClauseExtractionFromPB() {
-		PBConstraint::PBConstraint* pbc = createPbConstraint();
-		std::cout << *pbc << std::endl;
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 1));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(c, 3));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 4L);
+		//std::cout << *pbc << std::endl;
 		ClauseVec clauses;
 		bool ret = pbc->extractClauses(*solver, clauses);
 		CPPUNIT_ASSERT(ret);
-		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
+		CPPUNIT_ASSERT_EQUAL(4UL, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(3UL, clauses[0].size());
 	}
 
-	void testClauseExtractionFromClause() {
+	void testClauseExtractionFromDisguisedClause() {
 		WeightLitVec wlits;
 		wlits.push_back(WeightLiteral(a, 1));
 		wlits.push_back(WeightLiteral(b, 1));
 		wlits.push_back(WeightLiteral(c, 1));
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
-		std::cout << *pbc << std::endl;
+		//std::cout << *pbc << std::endl;
 		ClauseVec clauses;
 		bool ret = pbc->extractClauses(*solver, clauses);
-		//solver->sharedContext()->addVar(Var_t::atom_var);
-		//Literal p(solver->numVars()+1, true);
-		//solver->addUnary(p, Constraint_t::learnt_other);
 		CPPUNIT_ASSERT(ret);
 		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(4UL, clauses[0].size());

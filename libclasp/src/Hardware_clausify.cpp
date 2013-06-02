@@ -41,11 +41,17 @@ struct Clausifier
 
 
 	void  usage  (Formula f);
-	void _collect(Formula f, std::vector<Formula>& out);
-	void  collect(Formula f, std::vector<Formula> &out);
+	void _collect(Formula f, formulaVec& out);
+	void  collect(Formula f, formulaVec &out);
 
 	Lit   basicClausify   (Formula f);
 	Lit   polarityClausify(Formula f);
+
+	static void reset() {
+		occ = CMap<int>(0);
+		vmap = CMap<Var>(var_Undef);
+		vmapp = CMap<Lit,true>(lit_Undef);
+	}
 };
 
 CMap<int>      Clausifier::occ  (0);
@@ -71,7 +77,7 @@ void Clausifier::usage(Formula f)
 	}
 }
 
-void Clausifier::collect(Formula f, std::vector<Formula>& out)
+void Clausifier::collect(Formula f, formulaVec& out)
 {
 	tmp_marked.clear();
 	_collect(left(f), out);
@@ -80,7 +86,7 @@ void Clausifier::collect(Formula f, std::vector<Formula>& out)
 		seen.set(tmp_marked[i],false);
 }
 
-void Clausifier::_collect(Formula f, std::vector<Formula> &out)
+void Clausifier::_collect(Formula f, formulaVec &out)
 {
 	if (!seen.at(f)){
 		seen.set(f,true);
@@ -119,6 +125,7 @@ Lit Clausifier::polarityClausify(Formula f)
 		result = Lit(s.newVar());
 #endif
 		if (Bin_p(f)){
+
 			if (op(f) == op_And){
 				formulaVec conj;
 				collect(f, conj);
@@ -321,6 +328,8 @@ void clausify(Clasp::ClauseCollector& s, const Formula& f, Lit& out)
 
 void clausify(Clasp::ClauseCollector& s, const Formula& f)
 {
+	Clausifier::reset();
+
 	Lit out;
 	clausify(s, f, out);
 	s.addUnit(out);

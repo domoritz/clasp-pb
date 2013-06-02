@@ -28,17 +28,17 @@ public:
 	~ClauseCollector() {}
 
 	void addClause(LightClause &clause) {
-		std::cout << "push clause of size " << clause.size() << ":";
-		for (uint i = 0; i < clause.size(); ++i) {
-			std::cout << " " << (sign(clause[i]) ? "-" : "") << var(clause[i]) ;
-		}
-		std::cout << std::endl;
+		//std::cout << "push clause of size " << clause.size() << ":";
+		//for (uint i = 0; i < clause.size(); ++i) {
+		//	std::cout << " " << (sign(clause[i]) ? "-" : "") << var(clause[i]) ;
+		//}
+		//std::cout << std::endl;
 		clauses_.push_back(clause);
 	}
 
 	Var newVar() {
 		Var newVar = ++vars_;
-		std::cout << "new var " << newVar << std::endl;
+		//std::cout << "new var " << newVar << std::endl;
 		return newVar;
 	}
 
