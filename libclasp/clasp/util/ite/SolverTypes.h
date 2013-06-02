@@ -42,19 +42,19 @@ typedef int Var;
 
 
 class Lit {
-    int     x;
+	int     x;
 public:
-    Lit(void)   /* unspecifed value allowed for efficiency */      { }
-    explicit Lit(Var var, bool sign = false) : x((var+var) + sign) { }
-    friend Lit operator ~ (Lit p);
+	Lit(void)   /* unspecifed value allowed for efficiency */      { }
+	explicit Lit(Var var, bool sign = false) : x((var+var) + sign) { }
+	friend Lit operator ~ (Lit p);
 
-    friend bool sign (Lit p);
-    friend int  var  (Lit p);
-    friend int  index(Lit p);
-    friend Lit  toLit(int i);
+	friend bool sign (Lit p);
+	friend int  var  (Lit p);
+	friend int  index(Lit p);
+	friend Lit  toLit(int i);
 
-    friend bool operator == (Lit p, Lit q);
-    friend bool operator <  (Lit p, Lit q);
+	friend bool operator == (Lit p, Lit q);
+	friend bool operator <  (Lit p, Lit q);
 };
 inline Lit operator ~ (Lit p) { Lit q; q.x = p.x ^ 1; return q; }
 inline bool sign (Lit p) { return p.x & 1; }
