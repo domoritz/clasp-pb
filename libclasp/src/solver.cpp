@@ -714,7 +714,7 @@ bool Solver::resolveConflict() {
 			if (ClauseCreator::create(*this, cc_, ccInfo_) && (!pbRes || pbRes->integrate(*this))) {
 				return true;
 			}
-			assert( hasConflict() && "pbRes has to throw a conflict" );
+			assert( hasConflict() && "pbRes has to cause a conflict" );
 		}
 		else {
 			return backtrack();

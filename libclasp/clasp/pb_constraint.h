@@ -154,6 +154,11 @@ public:
 	uint32 isOpen(const Solver& s, const TypeSet& t, LitVec& freeLits);
 
 	//! Add *this to learnt constraints of solver and integrate into current search
+	/*!
+	 * \return
+	 *  - true if no new conflics were found
+	 *  - false otherwise
+	 */
 	bool integrate(Solver& s);
 
 	//! Eliminate variable from constraint using the reason of l being true
