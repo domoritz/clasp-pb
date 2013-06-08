@@ -726,9 +726,9 @@ bool Solver::resolveConflict() {
 						// could not integrate -> go back to analyze
 						std::cout << "Could not integrate" << pbResStack.top() << std::endl;
 						assert( hasConflict() && "pbRes has to throw a conflict" );
-						break;
+					} else {
+						pbResStack.pop();
 					}
-					pbResStack.pop();
 				}
 				if (pbResStack.empty())
 					return true;
