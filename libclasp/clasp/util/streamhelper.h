@@ -34,10 +34,11 @@
 
 namespace Clasp {
 
-inline std::ostream& operator<<(std::ostream& os, Literal p) {
-	if (p.sign()) os << "-";
-	os << p.var();
-	return os;
+inline std::ostream& operator<<(std::ostream& cout, const Literal& p) {
+	if (p.sign())
+		cout << "-";
+	cout << p.var();
+	return cout;
 }
 
 inline std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& pbc)
@@ -51,9 +52,18 @@ inline std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& p
 }
 
 template<typename T>
-std::ostream &operator <<(std::ostream& cout, const std::vector<T>& value)
+inline std::ostream &operator <<(std::ostream& cout, const std::vector<T>& value)
 {
-	std::copy(value.begin(), value.end(), std::ostream_iterator<char>(cout, " "));
+	cout << "[ ";
+	for (typename std::vector<T>::const_iterator ii = value.begin(); ii != value.end();)
+	{
+		cout << *ii;
+		if (++ii != value.end()) {
+			cout << " ";
+		}
+	}
+	cout << " ]";
+	return cout;
 }
 
 }
