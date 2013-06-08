@@ -26,8 +26,9 @@
 #include <clasp/clause.h>
 #include <clasp/solver_strategies.h>
 #define private public
-#include <src/pb_constraint.cpp>
+#include <clasp/pb_constraint.h>
 #undef private
+#include "test.h"
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4267) //  conversion from 'size_t' to unsigned int
@@ -50,11 +51,14 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
 	CPPUNIT_TEST(testReason);
 	CPPUNIT_TEST(testUpdateConstraint);
+	CPPUNIT_TEST(testClauseExtractionFromPB);
+	CPPUNIT_TEST(testClauseExtractionFromDisguisedClause);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
 	CPPUNIT_TEST(testConstructionFromConflict);
 	CPPUNIT_TEST(testGcd);
+	CPPUNIT_TEST(testNcK);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -261,6 +265,35 @@ public:
 		CPPUNIT_ASSERT(~b == lits[0]);
 	}
 
+	void testClauseExtractionFromPB() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 1));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(c, 3));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 4L);
+		//std::cout << *pbc << std::endl;
+		ClauseVec clauses;
+		bool ret = pbc->extractClauses(*solver, clauses);
+		CPPUNIT_ASSERT(ret);
+		CPPUNIT_ASSERT_EQUAL(4UL, clauses.size());
+		CPPUNIT_ASSERT_EQUAL(3UL, clauses[0].size());
+	}
+
+	void testClauseExtractionFromDisguisedClause() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 1));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(c, 1));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
+		//std::cout << *pbc << std::endl;
+		ClauseVec clauses;
+		bool ret = pbc->extractClauses(*solver, clauses);
+		CPPUNIT_ASSERT(ret);
+		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
+		CPPUNIT_ASSERT_EQUAL(4UL, clauses[0].size());
+		CPPUNIT_ASSERT_EQUAL(1UL, clauses[1].size());
+	}
+
 	void testSimplePropagation() {
 		// a :- b.
 		// b.
@@ -359,6 +392,15 @@ public:
 		CPPUNIT_ASSERT_EQUAL(57, gcd(7923, 77577));
 		CPPUNIT_ASSERT_EQUAL(10, gcd(10, 1000));
 		CPPUNIT_ASSERT_EQUAL(17, gcd(45645, 34));
+	}
+
+	void testNcK() {
+		CPPUNIT_ASSERT_EQUAL(0ULL, nChooseK(1, 2));
+		CPPUNIT_ASSERT_EQUAL(2ULL, nChooseK(2, 1));
+		CPPUNIT_ASSERT_EQUAL(1ULL, nChooseK(2, 2));
+		CPPUNIT_ASSERT_EQUAL(1ULL, nChooseK(7, 7));
+		CPPUNIT_ASSERT_EQUAL(120ULL, nChooseK(10, 3));
+		CPPUNIT_ASSERT_EQUAL(10618005270ULL, nChooseK(712, 4));
 	}
 
 private:

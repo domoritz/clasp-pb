@@ -18,18 +18,52 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-#pragma once
+#ifndef CLASP_PB_CONSTRAINT_H_INCLUDED
+#define CLASP_PB_CONSTRAINT_H_INCLUDED
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4200) // nonstandard extension used : zero-sized array
 #pragma once
 #endif
 
+#include <tr1/unordered_map>
+#include <algorithm>
 #include <clasp/constraint.h>
 #include <clasp/weight_constraint.h>
 #include <clasp/solver.h>
+#include <clasp/clause.h>
+#include <clasp/util/helpers.h>
+#include <clasp/util/ite/FEnv.h>
+#include <clasp/util/ite/ClauseCollector.h>
+
+// from boost functional
+template <class T>
+inline void hash_combine(std::size_t & seed, const T & v)
+{
+	std::tr1::hash<T> hasher;
+	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+namespace std
+{
+namespace tr1
+{
+template<typename S, typename T> struct hash<pair<S, T> >
+{
+	inline size_t operator()(const pair<S, T> & v) const
+	{
+		size_t seed = 0;
+		::hash_combine(seed, v.first);
+		::hash_combine(seed, v.second);
+		return seed;
+	}
+};
+}} // namespace
 
 namespace Clasp {
+
+typedef std::pair<uint32, wsum_t> BDDKey;
+typedef std::tr1::unordered_map<BDDKey, Formula> BDDCache;
 
 //! Class implementing learnt Pseudo-Boolean constraints
 /*!
@@ -132,6 +166,9 @@ public:
 	//! Multiply constraint with given factor
 	bool multiply(weight_t);
 
+	//! Get the clauses that represent this PBC using BDDs
+	bool extractClauses(Solver &s, ClauseVec& clauses) const;
+
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
 	~PBConstraint() {}
@@ -174,6 +211,8 @@ private:
 		return undo_[up_-1];
 	}
 
+	Formula buildBDD(uint32 size, wsum_t sum, wsum_t material_left, uint max_cost) const;
+
 	//! Returns the decision level of the last assigned literal
 	//! or 0 if no literal was assigned yet.
 	inline uint32	highestUndoLevel(Solver&) const;
@@ -210,6 +249,10 @@ private:
 			const WeightLitVec& wlv_;
 	};
 
+	// used to cache BDDs
+	mutable BDDCache* memo_;
 };
 
 } //namespace Clasp
+
+#endif
