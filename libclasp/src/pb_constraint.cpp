@@ -258,6 +258,29 @@ bool PBConstraint::multiply(weight_t x){
 	return true;
 }
 
+bool PBConstraint::isClause() const
+{
+	// 1a + 1b + 1c >= 1 is [a,b,c]
+	if (bound() <= 1)
+		return true;
+
+	// 3a + 1b + 1c >= 3 is [a]
+	if (weight(0) == bound()){
+		wsum_t sum = 0;
+		LitVec::size_type i = 1;
+		for (;i < size(); ++i) {
+			sum += weight(i);
+			if (sum >= bound())
+				break;
+		}
+		if (i == size()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool PBConstraint::extractClauses(Solver& s, ClauseVec &clauses) const
 {
 	// we need the max size to encode true and false

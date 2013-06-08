@@ -50,6 +50,9 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testWeakenWithProvidedLiteral);
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
 	CPPUNIT_TEST(testReason);
+	CPPUNIT_TEST(testIsSingleClause);
+	CPPUNIT_TEST(testIsNotSingleClause);
+	CPPUNIT_TEST(testIsSingleClauseDisguised);
 	CPPUNIT_TEST(testUpdateConstraint);
 	CPPUNIT_TEST(testClauseExtractionFromPB);
 	CPPUNIT_TEST(testClauseExtractionFromDisguisedClause);
@@ -263,6 +266,33 @@ public:
 		pbc->reason(*solver, ~c, lits);
 		CPPUNIT_ASSERT_EQUAL(1UL, lits.size());
 		CPPUNIT_ASSERT(~b == lits[0]);
+	}
+
+	void testIsSingleClause() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 1));
+		wlits.push_back(WeightLiteral(b, 1));
+		wlits.push_back(WeightLiteral(c, 1));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
+		CPPUNIT_ASSERT(pbc->isClause());
+	}
+
+	void testIsSingleClauseDisguised() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 4));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(c, 1));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 4L);
+		CPPUNIT_ASSERT(pbc->isClause());
+	}
+
+	void testIsNotSingleClause() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 4));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(c, 2));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 4L);
+		CPPUNIT_ASSERT(!pbc->isClause());
 	}
 
 	void testClauseExtractionFromPB() {

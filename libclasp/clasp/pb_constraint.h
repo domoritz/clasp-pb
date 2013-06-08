@@ -171,6 +171,9 @@ public:
 	//! Multiply constraint with given factor
 	bool multiply(weight_t);
 
+	//! Return true it the PBC represents a single clause
+	bool isClause() const;
+
 	//! Get the clauses that represent this PBC using BDDs
 	bool extractClauses(Solver &s, ClauseVec& clauses) const;
 
