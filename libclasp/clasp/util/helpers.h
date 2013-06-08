@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2006, Benjamin Kaufmann
+// Copyright (c) 2013, Dominik Moritz
 //
 // This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/
 //
@@ -18,12 +18,39 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-#ifndef TEST_TEST_H_INCLUDED
-#define TEST_TEST_H_INCLUDED
-
-#include <cppunit/TestFixture.h>
-#include <cppunit/TestAssert.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <clasp/util/streamhelper.h>
-
+#ifndef CLASP_HELPERS_H
+#define CLASP_HELPERS_H
+#ifdef _MSC_VER
+#pragma once
 #endif
+
+namespace Clasp {
+
+inline int32 gcd(int32 x, int32 y){
+	assert(x != 0 && y != 0);
+	while ( true ) {
+		if ( !x )
+			return y;
+		y %= x;
+
+		if ( !y )
+			return x;
+		x %= y;
+	}
+}
+
+inline uint64 nChooseK(uint32 n, uint32 k){
+	if (k > n) {
+		return 0;
+	}
+	uint64 r = 1;
+	for (uint32 d = 1; d <= k; ++d) {
+		r *= n--;
+		r /= d;
+	}
+	return r;
+}
+
+}
+
+#endif // CLASP_HELPERS_H
