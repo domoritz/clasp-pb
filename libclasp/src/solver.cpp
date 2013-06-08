@@ -704,7 +704,7 @@ bool Solver::resolveConflict() {
 			undoUntil( uipLevel );
 			PBConstraint* pbRes = aggregator_;
 			aggregator_         = NULL;
-			if (pbRes && pbRes->bound() <= 1) {
+			if (pbRes && pbRes->isClause()) {
 				// Subsumed by clause
 				pbRes->destroy(0, false);
 				pbRes = 0;
