@@ -291,7 +291,7 @@ bool PBConstraint::extractClauses(Solver& s, ClauseVec &clauses) const
 		material_left += weight(i);
 	}
 	memo_ = new BDDCache();
-	Formula formula = buildBDD(size(), 0UL, material_left, 1e10);
+	Formula formula = buildBDD(size(), 0UL, material_left, 4000);
 	delete memo_;
 
 	assert(formula != _error_);

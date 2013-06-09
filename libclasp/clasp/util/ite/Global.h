@@ -35,36 +35,15 @@ Contains types, macros, and inline functions generally useful in a C++ program.
 #include <utility>
 #include <vector>
 #include <new>
+#include <clasp/util/platform.h>
 
 
 //=================================================================================================
 // Basic Types & Minor Things:
 
-
-#ifdef _MSC_VER
-typedef INT64              int64;
-typedef UINT64             uint64;
-typedef INT_PTR            intp;
-typedef UINT_PTR           uintp;
-#define I64_fmt "I64d"
-#else
-typedef long long          int64;
-typedef unsigned long long uint64;
-typedef __PTRDIFF_TYPE__   intp;
-typedef unsigned __PTRDIFF_TYPE__ uintp;
-#define I64_fmt "lld"
-#endif
-
-typedef signed char    schar;
-typedef unsigned char  uchar;
 typedef unsigned int   uint;
 typedef unsigned long  ulong;
 typedef const char     cchar;
-typedef short          int16;
-typedef unsigned short uint16;
-typedef int            int32;
-typedef unsigned       uint32;
-typedef unsigned int   uint;
 typedef unsigned short ushort;
 
 

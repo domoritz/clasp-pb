@@ -39,6 +39,7 @@ typedef INT32     int32;
 typedef UINT32    uint32;
 typedef UINT64    uint64;
 typedef INT64     int64;
+typedef INT_PTR   intp;
 typedef UINT_PTR  uintp;
 #define PRIu64 "llu"
 #define PRId64 "lld"
@@ -59,6 +60,7 @@ typedef int32_t	    int32;
 typedef uint32_t    uint32;
 typedef uint64_t    uint64;
 typedef int64_t     int64;
+typedef intptr_t    intp;
 typedef uintptr_t   uintp;
 #define BIT_MASK(x,n) ( static_cast<__typeof((x))>(1)<<(n) )
 #define TODO(X) ("TODO: " X)
