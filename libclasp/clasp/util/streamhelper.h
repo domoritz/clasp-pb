@@ -41,6 +41,13 @@ inline std::ostream& operator<<(std::ostream& cout, const Literal& p) {
 	return cout;
 }
 
+inline std::ostream& operator<<(std::ostream& cout, const Lit& p) {
+	if (sign(p))
+		cout << "-";
+	cout << var(p);
+	return cout;
+}
+
 inline std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& pbc)
 {
 	cout << "PB Constraint [ ";
