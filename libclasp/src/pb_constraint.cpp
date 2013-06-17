@@ -23,6 +23,7 @@
 #include <clasp/solver.h>
 #include <clasp/pb_constraint.h>
 #include <clasp/util/ite/Hardware.h>
+#include <clasp/util/streamhelper.h>
 #include <iostream>
 
 namespace Clasp {
@@ -274,69 +275,12 @@ bool PBConstraint::isClause() const
 				break;
 		}
 		if (i == size()) {
+			//std::cout << *this << std::endl;
 			return true;
 		}
 	}
 
 	return false;
-}
-
-bool PBConstraint::extractClauses(Solver& s, ClauseVec &clauses) const
-{
-	// we need the max size to encode true and false
-	assert(size() < std::numeric_limits<uint32>::max());
-
-	wsum_t material_left = 0;
-	for(LitVec::size_type i= 0; i != size(); ++i){
-		material_left += weight(i);
-	}
-	memo_ = new BDDCache();
-	Formula formula = buildBDD(size(), 0UL, material_left, 4000);
-	delete memo_;
-
-	assert(formula != _error_);
-	if (formula == _undef_) {
-		return false;
-	}
-
-	Clasp::ClauseCollector collector(s);
-	clausify(collector, formula);
-	clauses = collector.clauses();
-	return true;
-}
-
-Formula PBConstraint::buildBDD(uint32 size, wsum_t sum, wsum_t material_left, uint max_cost) const
-{
-	if (sum >= bound_) {
-		return _1_;
-	} else if (sum + material_left < bound_) {
-		return _0_;
-	} else if (FEnv::topSize() > max_cost) {
-		return _undef_;
-	}
-
-	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
-	BDDCache::const_iterator it = memo_->find(key);
-
-	if (it == memo_->end()) {
-		assert(size != 0);
-		Formula formula;
-		size--;
-		material_left -= weight(size);
-		wsum_t hi_sum = lit(size).sign() ? sum : sum + weight(size);
-		wsum_t lo_sum = lit(size).sign() ? sum + weight(size) : sum;
-		Formula hi_result = buildBDD(size, hi_sum, material_left, max_cost);
-		if (hi_result == _undef_) return _undef_;
-		Formula lo_result = buildBDD(size, lo_sum, material_left, max_cost);
-		if (lo_result == _undef_) return _undef_;
-
-		int l = lit(size).index();
-		formula = ITE(var(var(l)), hi_result, lo_result);
-		(*memo_)[key] = formula;
-		return formula;
-	} else {
-		return it->second;
-	}
 }
 
 void PBConstraint::weaken(Solver& s, Literal p){
@@ -563,5 +507,74 @@ bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
 	}
 	return true;
 }
+
+PbcClauseConverter::PbcClauseConverter(const PBConstraint &pbc):
+	pbc_(pbc)
+{
+}
+
+bool PbcClauseConverter::convert(Solver &s, const PBConstraint &pbc, ClauseVec &clauses)
+{
+	PbcClauseConverter conv(pbc);
+	return conv.convert(s, clauses);
+}
+
+bool PbcClauseConverter::convert(Solver& s, ClauseVec &clauses)
+{
+	// we need the max size to encode true and false
+	assert(pbc_.size() < std::numeric_limits<uint32>::max());
+
+	wsum_t material_left = 0;
+	for(LitVec::size_type i= 0; i != pbc_.size(); ++i){
+		material_left += pbc_.weight(i);
+	}
+	memo.clear();
+	Formula formula = buildBDD(pbc_.size(), 0UL, material_left, 4000);
+
+	assert(formula != _error_);
+	if (formula == _undef_) {
+		return false;
+	}
+
+	Clasp::ClauseCollector collector(s);
+	clausify(collector, formula);
+	clauses = collector.clauses();
+	return true;
+}
+
+Formula PbcClauseConverter::buildBDD(uint32 size, wsum_t sum, wsum_t material_left, uint max_cost)
+{
+	if (sum >= pbc_.bound()) {
+		return _1_;
+	} else if (sum + material_left < pbc_.bound()) {
+		return _0_;
+	} else if (FEnv::topSize() > max_cost) {
+		return _undef_;
+	}
+
+	BDDKey key = std::make_pair<uint32, wsum_t>(size, sum);
+	BDDCache::const_iterator it = memo.find(key);
+
+	if (it == memo.end()) {
+		assert(size != 0);
+		Formula formula;
+		size--;
+		material_left -= pbc_.weight(size);
+		wsum_t hi_sum = pbc_.lit(size).sign() ? sum : sum + pbc_.weight(size);
+		wsum_t lo_sum = pbc_.lit(size).sign() ? sum + pbc_.weight(size) : sum;
+		Formula hi_result = buildBDD(size, hi_sum, material_left, max_cost);
+		if (hi_result == _undef_) return _undef_;
+		Formula lo_result = buildBDD(size, lo_sum, material_left, max_cost);
+		if (lo_result == _undef_) return _undef_;
+
+		int l = pbc_.lit(size).index();
+		formula = ITE(var(var(l)), hi_result, lo_result);
+		memo[key] = formula;
+		return formula;
+	} else {
+		return it->second;
+	}
+}
+
 
 } //namespace Clasp

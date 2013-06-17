@@ -303,7 +303,7 @@ public:
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 4L);
 		//std::cout << *pbc << std::endl;
 		ClauseVec clauses;
-		bool ret = pbc->extractClauses(*solver, clauses);
+		bool ret = PbcClauseConverter::convert(*solver, *pbc, clauses);
 		CPPUNIT_ASSERT(ret);
 		CPPUNIT_ASSERT_EQUAL(4UL, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(3UL, clauses[0].size());
@@ -317,7 +317,7 @@ public:
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 1L);
 		//std::cout << *pbc << std::endl;
 		ClauseVec clauses;
-		bool ret = pbc->extractClauses(*solver, clauses);
+		bool ret = PbcClauseConverter::convert(*solver, *pbc, clauses);
 		CPPUNIT_ASSERT(ret);
 		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(4UL, clauses[0].size());

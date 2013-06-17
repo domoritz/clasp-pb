@@ -174,9 +174,6 @@ public:
 	//! Return true it the PBC represents a single clause
 	bool isClause() const;
 
-	//! Get the clauses that represent this PBC using BDDs
-	bool extractClauses(Solver &s, ClauseVec& clauses) const;
-
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
 	~PBConstraint() {}
@@ -219,8 +216,6 @@ private:
 		return undo_[up_-1];
 	}
 
-	Formula buildBDD(uint32 size, wsum_t sum, wsum_t material_left, uint max_cost) const;
-
 	//! Returns the decision level of the last assigned literal
 	//! or 0 if no literal was assigned yet.
 	inline uint32	highestUndoLevel(Solver&) const;
@@ -256,9 +251,23 @@ private:
 			const Solver& solver_;
 			const WeightLitVec& wlv_;
 	};
+};
 
-	// used to cache BDDs
-	mutable BDDCache* memo_;
+class PbcClauseConverter {
+public:
+	PbcClauseConverter(const PBConstraint &pbc);
+
+	static bool convert(Solver &s, const PBConstraint &pbc, ClauseVec &clauses);
+
+	//! Get the clauses that represent this PBC using BDDs
+	bool convert(Solver &s, ClauseVec& clauses);
+
+private:
+	const PBConstraint& pbc_;
+	BDDCache memo;
+
+protected:
+	Formula buildBDD(uint32 size, wsum_t sum, wsum_t material_left, uint max_cost);
 };
 
 } //namespace Clasp
