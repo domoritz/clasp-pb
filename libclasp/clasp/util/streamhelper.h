@@ -26,11 +26,12 @@
 #pragma once
 #endif
 
+#include <clasp/pb_constraint.h>
+#include <clasp/literal.h>
 #include <algorithm>
 #include <iterator>
 #include <vector>
-#include <clasp/pb_constraint.h>
-#include <clasp/literal.h>
+#include <bitset>
 
 namespace Clasp {
 
@@ -71,6 +72,16 @@ inline std::ostream &operator <<(std::ostream& cout, const std::vector<T>& value
 	}
 	cout << " ]";
 	return cout;
+}
+
+template<typename T>
+void show_binrep(const T& a)
+{
+	const char* beg = reinterpret_cast<const char*>(&a);
+	const char* end = beg + sizeof(a);
+	while(beg != end)
+		std::cout << std::bitset<CHAR_BIT>(*beg++) << ' ';
+	std::cout << '\n';
 }
 
 }

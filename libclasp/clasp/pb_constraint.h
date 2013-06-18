@@ -258,9 +258,13 @@ public:
 	PbcClauseConverter(const PBConstraint &pbc);
 
 	static bool convert(Solver &s, const PBConstraint &pbc, ClauseVec &clauses);
+	static void convertDirectly(const PBConstraint &pbc, ClauseVec &clauses);
 
 	//! Get the clauses that represent this PBC using BDDs
 	bool convert(Solver &s, ClauseVec& clauses);
+
+	//! Get the clauses with a direct translation that may produce exponentially many clauses
+	void convertDirectly(ClauseVec &clauses);
 
 private:
 	const PBConstraint& pbc_;

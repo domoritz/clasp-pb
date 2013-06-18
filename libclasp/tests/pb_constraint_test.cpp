@@ -56,6 +56,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testUpdateConstraint);
 	CPPUNIT_TEST(testClauseExtractionFromPB);
 	CPPUNIT_TEST(testClauseExtractionFromDisguisedClause);
+	CPPUNIT_TEST(testDirectClauseExtraction);
 	CPPUNIT_TEST(testSimplePropagation);
 	CPPUNIT_TEST(testSimplePbPropagation);
 	CPPUNIT_TEST(testExtractionFromWeightConstraint);
@@ -322,6 +323,18 @@ public:
 		CPPUNIT_ASSERT_EQUAL(2UL, clauses.size());
 		CPPUNIT_ASSERT_EQUAL(4UL, clauses[0].size());
 		CPPUNIT_ASSERT_EQUAL(1UL, clauses[1].size());
+	}
+
+	void testDirectClauseExtraction() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(~a, 1));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(c, 3));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 4L);
+		ClauseVec clauses;
+		PbcClauseConverter::convertDirectly(*pbc, clauses);
+		//std::cout << clauses;
+		CPPUNIT_ASSERT_EQUAL(5UL, clauses.size());
 	}
 
 	void testSimplePropagation() {

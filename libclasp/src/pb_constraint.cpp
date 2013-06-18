@@ -519,6 +519,12 @@ bool PbcClauseConverter::convert(Solver &s, const PBConstraint &pbc, ClauseVec &
 	return conv.convert(s, clauses);
 }
 
+void PbcClauseConverter::convertDirectly(const PBConstraint &pbc, ClauseVec &clauses)
+{
+	PbcClauseConverter conv(pbc);
+	conv.convertDirectly(clauses);
+}
+
 bool PbcClauseConverter::convert(Solver& s, ClauseVec &clauses)
 {
 	// we need the max size to encode true and false
@@ -576,5 +582,33 @@ Formula PbcClauseConverter::buildBDD(uint32 size, wsum_t sum, wsum_t material_le
 	}
 }
 
+void PbcClauseConverter::convertDirectly(ClauseVec &clauses)
+{
+	assert(pbc_.size() <= 32);
+	uint32 mask = 0;
+
+	// generate all subsets
+	for (int i = 0; i < ::pow(2, pbc_.size()); ++i) {
+		//show_binrep(mask);
+		mask += 1;
+
+		wsum_t sum = 0;
+		for (uint j = 0; j < pbc_.size(); ++j) {
+			if ((mask&(1<<j)) == 0) {
+				sum += pbc_.weight(j);
+			}
+		}
+		sum -= pbc_.bound();
+		LightClause c;
+		if (sum < 0) {
+			for (uint j = 0; j < pbc_.size(); ++j) {
+				if ((mask&(1<<j)) != 0) {
+					c.push_back(Lit(pbc_.lit(j).var(), pbc_.lit(j).sign()));
+				}
+			}
+			clauses.push_back(c);
+		}
+	}
+}
 
 } //namespace Clasp
