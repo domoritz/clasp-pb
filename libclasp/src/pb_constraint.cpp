@@ -573,7 +573,7 @@ Formula PbcClauseConverter::buildBDD(uint32 size, wsum_t sum, wsum_t material_le
 		Formula lo_result = buildBDD(size, lo_sum, material_left, max_cost);
 		if (lo_result == _undef_) return _undef_;
 
-		int l = pbc_.lit(size).index();
+		Lit l(pbc_.lit(size).index());
 		formula = ITE(var(var(l)), hi_result, lo_result);
 		memo[key] = formula;
 		return formula;
