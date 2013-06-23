@@ -26,6 +26,8 @@
 #include <clasp/util/streamhelper.h>
 #include <iostream>
 
+#include <math.h>
+
 namespace Clasp {
 
 PBConstraint::PBConstraint(Solver& s, const Literal p, const Antecedent& ant, bool conflict):
