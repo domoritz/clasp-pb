@@ -510,6 +510,34 @@ bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
 	return true;
 }
 
+PbcAggregator::PbcAggregator(Solver& s)
+{
+	weights_.resize(s.numVars());
+}
+
+void PbcAggregator::clearWeights()
+{
+	for (uint i = 0; i < weights_.size(); ++i) {
+		weights_.assign(i, 0);
+	}
+}
+
+PBConstraint *PbcAggregator::createPbc()
+{
+	PBConstraint* pbc = new PBConstraint();
+	return pbc;
+}
+
+void PbcAggregator::setPbc(const PBConstraint &pbc) {
+	clearWeights();
+
+	lits_.reserve(pbc.size());
+	for (uint i = 0; i < pbc.size(); ++i) {
+		lits_.push_back(pbc.lit(i));
+		weights_.assign(pbc.lit(i).index(), pbc.weight(i));
+	}
+}
+
 PbcClauseConverter::PbcClauseConverter(const PBConstraint &pbc):
 	pbc_(pbc)
 {

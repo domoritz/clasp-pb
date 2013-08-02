@@ -558,7 +558,9 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			a.reason(*this, p, conflict_);
 			if(strategy_.analyze) {
 				// save conflicting PBConstraint as well
-				aggregator_= new PBConstraint(*this, p, a, true);
+				// ToDo: delete
+				PBConstraint* pbc = new PBConstraint(*this, p, a, true);
+				aggregator_->setPbc(*pbc);
 			}
 		}
 		else {
@@ -569,13 +571,16 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			a.reason(*this, p, conflict_);
 			if(strategy_.analyze) {
 				// save conflicting PBConstraint as well
-				aggregator_= new PBConstraint(*this, p, a, true);
+				// ToDo: delete
+				PBConstraint* pbc = new PBConstraint(*this, p, a, true);
+				aggregator_->setPbc(*pbc);
 			}
 			// restore old data
 			assign_.setData(p.var(), saved);
 		}
 	}
-	assert( !aggregator_ || aggregator_->slack() < 0 );
+	// ToDo
+	//assert( !aggregator_ || aggregator_->slack() < 0 );
 }
 
 bool Solver::assume(const Literal& p) {
@@ -702,7 +707,7 @@ bool Solver::resolveConflict() {
 			uint32 uipLevel = analyzeConflict();
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
 			undoUntil( uipLevel );
-			PBConstraint* pbRes = aggregator_;
+			PBConstraint* pbRes = aggregator_->createPbc();
 			aggregator_         = NULL;
 			if (pbRes && pbRes->isClause()) {
 				// Subsumed by clause

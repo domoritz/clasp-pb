@@ -253,6 +253,27 @@ private:
 	};
 };
 
+/**
+ * @brief Helper class to aggregate constraints during conflict analysis.
+ *		Similar to assign_ and cc_.
+ */
+class PbcAggregator
+{
+public:
+	PbcAggregator(Solver &s);
+	void setPbc(const PBConstraint &pbc);
+	void clearWeights();
+
+	PBConstraint* createPbc();
+
+private:
+	WeightVec weights_;
+	LitVec lits_;
+};
+
+/**
+ * @brief Helper class to convert PBCs to clauses using BDDs or direct conversion
+ */
 class PbcClauseConverter {
 public:
 	PbcClauseConverter(const PBConstraint &pbc);

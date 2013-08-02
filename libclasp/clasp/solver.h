@@ -30,7 +30,7 @@
 
 namespace Clasp {
 
-    class PBConstraint;
+	class PbcAggregator;
 
 //! Parameter-Object for controlling search limits.
 struct SearchLimits {
@@ -839,9 +839,9 @@ private:
 	LitVec            conflict_;    // stores conflict-literals for later analysis
 	LitVec            cc_;          // temporary: stores conflict clause within analyzeConflict
 	LitVec            temp_;        // temporary: eliminated vars that are unconstraint w.r.t the current model
-    PBConstraint*     aggregator_;  // stores PB conflict constraint
+	PbcAggregator*    aggregator_;  // stores PB conflict constraint
     std::vector<bool> pb_tag_;      // used for canonicalize in cutting planes variable elimination
-    WeightLitVec      bumpAct_;     // temporary: lits from current dl whose activity might get an extra bump
+	WeightLitVec      bumpAct_;     // temporary: lits from current dl whose activity might get an extra bump
 	DecisionLevels    levels_;      // Stores information (e.g. position in trail) on each decision level
 	VarVec            lbdStamp_;    // temporary vector for computing LBD
 	VarVec            cflStamp_;    // temporary vector for computing number of conflicts in branch
