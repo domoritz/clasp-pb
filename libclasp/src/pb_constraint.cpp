@@ -332,7 +332,7 @@ wsum_t PBConstraint::canonicalize(Solver& s) {
 			}
 			else {
 				if( s.value(lit(i).var()) == value_free ){
-					// we double counted this amount if we calculated the slack
+					// we double counted this amount when we calculated the slack
 					slack_adjust+= std::min(weight(i), weight(other));
 					assert( slack_adjust >= 0 );
 				}
@@ -510,31 +510,109 @@ bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
 	return true;
 }
 
-PbcAggregator::PbcAggregator(Solver& s)
+PBCAggregator::PBCAggregator(Solver& s)
 {
 	weights_.resize(s.numVars());
 }
 
-void PbcAggregator::clearWeights()
+void PBCAggregator::resetWeights()
 {
 	for (uint i = 0; i < weights_.size(); ++i) {
 		weights_.assign(i, 0);
 	}
 }
 
-PBConstraint *PbcAggregator::createPbc()
+uint32 PBCAggregator::size() const
 {
-	PBConstraint* pbc = new PBConstraint();
-	return pbc;
+	return lits_.size();
 }
 
-void PbcAggregator::setPbc(const PBConstraint &pbc) {
-	clearWeights();
+void PBCAggregator::varElimination(Solver &s, Literal l)
+{
+	assert(weight(l) < 0);
 
-	lits_.reserve(pbc.size());
-	for (uint i = 0; i < pbc.size(); ++i) {
-		lits_.push_back(pbc.lit(i));
-		weights_.assign(pbc.lit(i).index(), pbc.weight(i));
+	static PBConstraint eliminator;
+	eliminator.reset();
+	PBConstraint::buildPBConstraint(eliminator, s, l, s.reason(l));
+
+	weight_t mel= eliminator.weight(l);
+	weight_t mag= weight(l.index());
+	weight_t mgcd= gcd(mel, mag);
+
+	mel= mel/mgcd;
+	mag= mag/mgcd;
+
+	// TODO: From thesis: "Checks if the sum of the slacks is non-negative and applies weakening if it is not"
+	if (mag*eliminator.slack_ + mel*pbc_->slack_ >= 0 ){
+		eliminator.weaken(s,l);
+		mel= 1;
+		mag= weight(~l);
+	}
+
+	bool mult= multiply(mel);
+	assert( mult );
+	mult= eliminator.multiply(mag);
+	assert( mult );
+
+	// this might be overestimated and is adjusted via canonicalize
+	pbc_->bound_+= eliminator.bound_;
+	pbc_->slack_ -= eliminator.bound_;
+
+	for (uint i = 0; i < eliminator.size(); ++i) {
+		const WeightLiteral wl = eliminator.lits_[i];
+		if (!weights_[wl.first.index()]) {
+			lits_.push_back(wl.first);
+		}
+		weights_[wl.first.index()] += wl.second;
+		if (!weights_[wl.first.index()]) {
+			// remove lit from lits_, need to go through it
+			// ToDo: index
+			uint32 i = 0;
+			LitVec::iterator it = lits_.begin();
+			for (; it != lits_.end(); it++) {
+				if (*it == wl.first) {
+					lits_.erase(lits_.begin()+i, lits_.begin()+i+1);
+					break;
+				}
+			}
+			assert(it != lits_.end() && "Haven't found what I'm looking for.");
+		}
+		pbc_->slack_ += wl.second;
+	}
+}
+
+PBConstraint *PBCAggregator::finalize()
+{
+	pbc_->lits_.clear();
+	pbc_->lits_.reserve(size());
+	for (uint i = 0; i < size(); ++i) {
+		pbc_->lits_.push_back(WeightLiteral(lit(i), weight(i)));
+	}
+	return pbc_;
+}
+
+bool PBCAggregator::multiply(weight_t x)
+{
+	// ToDo: checks
+
+	for(LitVec::size_type i= 0; i != lits_.size(); ++i){
+		weights_[lits_[i].index()] *= x;
+	}
+	pbc_->slack_ *= x;
+	pbc_->bound_ *= x;
+
+	return true;
+}
+
+void PBCAggregator::setPBC(PBConstraint *pbc) {
+	resetWeights();
+
+	pbc_ = pbc;
+
+	lits_.reserve(pbc_->size());
+	for (uint i = 0; i < pbc_->size(); ++i) {
+		lits_.push_back(pbc_->lit(i));
+		weights_.assign(pbc_->lit(i).index(), pbc_->weight(i));
 	}
 }
 

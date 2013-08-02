@@ -560,7 +560,7 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 				// save conflicting PBConstraint as well
 				// ToDo: delete
 				PBConstraint* pbc = new PBConstraint(*this, p, a, true);
-				aggregator_->setPbc(*pbc);
+				aggregator_->setPBC(pbc);
 			}
 		}
 		else {
@@ -573,7 +573,7 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 				// save conflicting PBConstraint as well
 				// ToDo: delete
 				PBConstraint* pbc = new PBConstraint(*this, p, a, true);
-				aggregator_->setPbc(*pbc);
+				aggregator_->setPBC(pbc);
 			}
 			// restore old data
 			assign_.setData(p.var(), saved);
@@ -707,7 +707,7 @@ bool Solver::resolveConflict() {
 			uint32 uipLevel = analyzeConflict();
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
 			undoUntil( uipLevel );
-			PBConstraint* pbRes = aggregator_->createPbc();
+			PBConstraint* pbRes = aggregator_->finalize();
 			aggregator_         = NULL;
 			if (pbRes && pbRes->isClause()) {
 				// Subsumed by clause
@@ -919,9 +919,7 @@ uint32 Solver::analyzeConflict() {
 		}
 		--resSize; // p will be resolved out next
 		last = rhs;
-		// an earlier elimination might have removed this already!
-		if (cpAnalysis && aggregator_->weight(~p) > 0){
-			assert(aggregator_ != 0);
+		if (cpAnalysis) {
 			aggregator_->varElimination(*this, p);
 		}
 		reason(p, conflict_);

@@ -251,24 +251,61 @@ private:
 			const Solver& solver_;
 			const WeightLitVec& wlv_;
 	};
+
+	friend class PBCAggregator;
 };
 
 /**
  * @brief Helper class to aggregate constraints during conflict analysis.
  *		Similar to assign_ and cc_.
+ *
+ * The weight vector has a position for each literal (not just the once in the pbc)
+ * to allow fast access and checks.
+ *
+ * Usage: set pbc, call varEleimination, finalize
+ *
+ * The interal pbc variable is not updated. You need to call finalize to copy the
+ * weight literals back into the original pbc.
+ *
  */
-class PbcAggregator
+class PBCAggregator
 {
 public:
-	PbcAggregator(Solver &s);
-	void setPbc(const PBConstraint &pbc);
-	void clearWeights();
+	PBCAggregator(Solver &s);
 
-	PBConstraint* createPbc();
+	//! Set the conflicting pbc
+	/*! also set the weights and literals from the (conflicting) pbc */
+	void setPBC(PBConstraint *pbc);
+
+	//! Eliminate variable from constraint using the reason of l being true
+	/*! assert this->integrate() has not been called yet */
+	void varElimination(Solver& s, Literal l);
+
+	//! Writes the weights and literals back into the pbc
+	PBConstraint* finalize();
 
 private:
+	//! Multiply constraint with given factor
+	bool multiply(weight_t x);
+
+	//! Sets all weights to 0
+	void resetWeights();
+
+	//! Number of literals
+	uint32 size() const;
+
+	//! Returns the literal at position i
+	inline Literal& lit(uint32 i) { return lits_[i]; }
+
+	//! Returns the weight of the i'th literal
+	inline weight_t& weight(uint32 i) { return weights_[lit(i).index()]; }
+
+	//! Returns the weight of a literal
+	inline weight_t& weight(Literal l) { return weights_[l.index()]; }
+
 	WeightVec weights_;
 	LitVec lits_;
+	PBConstraint* pbc_;
 };
 
 /**
