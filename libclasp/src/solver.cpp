@@ -227,6 +227,8 @@ void Solver::freeMem() {
 	}
 	delete smallAlloc_;
 	delete ccMin_;
+	if (aggregator_)
+		delete aggregator_;
 	smallAlloc_   = 0;
 	ccMin_        = 0;
 }
@@ -279,6 +281,9 @@ bool Solver::endInit() {
 			else                             { initPrefValue(v, 1 + defaultLiteral(v).sign()); }
 		}
 	}
+	// create aggregator for pbc conflict resolution
+	if (strategy_.analyze)
+		aggregator_ = new PBCAggregator(*this);
 	// enable funky post propagators and
 	// force initial propagation
 	PostPropagator* ext = post_.enableFunky();
@@ -708,7 +713,6 @@ bool Solver::resolveConflict() {
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
 			undoUntil( uipLevel );
 			PBConstraint* pbRes = aggregator_->finalize();
-			aggregator_         = NULL;
 			if (pbRes && pbRes->isClause()) {
 				// Subsumed by clause
 				pbRes->destroy(0, false);

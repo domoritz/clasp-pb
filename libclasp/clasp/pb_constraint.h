@@ -298,7 +298,7 @@ private:
 	inline Literal& lit(uint32 i) { return lits_[i]; }
 
 	//! Returns the weight of the i'th literal
-	inline weight_t& weight(uint32 i) { return weights_[lit(i).index()]; }
+	inline weight_t& weight(uint32 i) { return weight(lit(i)); }
 
 	//! Returns the weight of a literal
 	inline weight_t& weight(Literal l) { return weights_[l.index()]; }

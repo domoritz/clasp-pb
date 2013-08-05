@@ -510,7 +510,9 @@ bool PBConstraint::minimize(Solver& s, Literal p, CCMinRecursive* r){
 	return true;
 }
 
-PBCAggregator::PBCAggregator(Solver& s)
+
+PBCAggregator::PBCAggregator(Solver& s) :
+	pbc_(NULL)
 {
 	weights_.resize(s.numVars());
 }
@@ -529,14 +531,14 @@ uint32 PBCAggregator::size() const
 
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
-	assert(weight(l) < 0);
+	assert(pbc_);
 
 	static PBConstraint eliminator;
 	eliminator.reset();
 	PBConstraint::buildPBConstraint(eliminator, s, l, s.reason(l));
 
 	weight_t mel= eliminator.weight(l);
-	weight_t mag= weight(l.index());
+	weight_t mag= weight(l);
 	weight_t mgcd= gcd(mel, mag);
 
 	mel= mel/mgcd;
@@ -588,7 +590,9 @@ PBConstraint *PBCAggregator::finalize()
 	for (uint i = 0; i < size(); ++i) {
 		pbc_->lits_.push_back(WeightLiteral(lit(i), weight(i)));
 	}
-	return pbc_;
+	PBConstraint* p = pbc_;
+	pbc_ = NULL;
+	return p;
 }
 
 bool PBCAggregator::multiply(weight_t x)
@@ -615,6 +619,7 @@ void PBCAggregator::setPBC(PBConstraint *pbc) {
 		weights_.assign(pbc_->lit(i).index(), pbc_->weight(i));
 	}
 }
+
 
 PbcClauseConverter::PbcClauseConverter(const PBConstraint &pbc):
 	pbc_(pbc)
