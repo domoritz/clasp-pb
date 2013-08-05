@@ -282,7 +282,10 @@ public:
 	void varElimination(Solver& s, Literal l);
 
 	//! Writes the weights and literals back into the pbc
-	PBConstraint* finalize();
+	PBConstraint* finalize(Solver &s);
+
+	//! True if the aggregator has a pbc
+	bool initialized() const;
 
 private:
 	//! Multiply constraint with given factor

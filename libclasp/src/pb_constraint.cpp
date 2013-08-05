@@ -531,7 +531,13 @@ uint32 PBCAggregator::size() const
 
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
-	assert(pbc_);
+	//std::cout << pbc_ << " " << *pbc_ << " " << l.index() << std::endl;
+	assert(initialized());
+
+	// sometimes we are asked to eliminate variables that are
+	// already eliminated
+	if (!weight(l))
+		return;
 
 	static PBConstraint eliminator;
 	eliminator.reset();
@@ -568,7 +574,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		weights_[wl.first.index()] += wl.second;
 		if (!weights_[wl.first.index()]) {
 			// remove lit from lits_, need to go through it
-			// ToDo: index
+			// TODO: index
 			uint32 i = 0;
 			LitVec::iterator it = lits_.begin();
 			for (; it != lits_.end(); it++) {
@@ -583,16 +589,23 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	}
 }
 
-PBConstraint *PBCAggregator::finalize()
+PBConstraint *PBCAggregator::finalize(Solver &s)
 {
+	assert(initialized());
 	pbc_->lits_.clear();
-	pbc_->lits_.reserve(size());
+	pbc_->lits_.resize(size());
 	for (uint i = 0; i < size(); ++i) {
-		pbc_->lits_.push_back(WeightLiteral(lit(i), weight(i)));
+		pbc_->lits_.assign(i, WeightLiteral(lit(i), weight(i)));
 	}
+	pbc_->canonicalize(s);
 	PBConstraint* p = pbc_;
 	pbc_ = NULL;
 	return p;
+}
+
+bool PBCAggregator::initialized() const
+{
+	return pbc_;
 }
 
 bool PBCAggregator::multiply(weight_t x)
@@ -610,6 +623,7 @@ bool PBCAggregator::multiply(weight_t x)
 
 void PBCAggregator::setPBC(PBConstraint *pbc) {
 	resetWeights();
+	assert(!initialized());
 
 	pbc_ = pbc;
 
