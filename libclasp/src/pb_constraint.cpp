@@ -285,6 +285,16 @@ bool PBConstraint::isClause() const
 	return false;
 }
 
+weight_t PBConstraint::calculateSlack() const
+{
+	weight_t slack = 0;
+	for (LitVec::size_type i= 0; i != lits_.size(); ++i){
+		slack += lits_[i].second;
+	}
+	slack -= bound_;
+	return slack;
+}
+
 void PBConstraint::weaken(Solver& s, Literal p){
 	assert( weight(p) > 0 || p == Literal(0, true) );
 	assert( undo_ == 0 && "this should not be integrated yet");

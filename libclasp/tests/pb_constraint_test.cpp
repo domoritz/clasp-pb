@@ -50,6 +50,7 @@ class PbConstraintTest : public CppUnit::TestFixture {
 	CPPUNIT_TEST(testWeakenWithProvidedLiteral);
 	CPPUNIT_TEST(testWeakenWithoutProvidedLiteral);
 	CPPUNIT_TEST(testReason);
+	CPPUNIT_TEST(testCalculateSLack);
 	CPPUNIT_TEST(testIsSingleClause);
 	CPPUNIT_TEST(testIsNotSingleClause);
 	CPPUNIT_TEST(testIsSingleClauseDisguised);
@@ -267,6 +268,15 @@ public:
 		pbc->reason(*solver, ~c, lits);
 		CPPUNIT_ASSERT_EQUAL(1UL, lits.size());
 		CPPUNIT_ASSERT(~b == lits[0]);
+	}
+
+	void testCalculateSLack() {
+		WeightLitVec wlits;
+		wlits.push_back(WeightLiteral(a, 1));
+		wlits.push_back(WeightLiteral(b, 2));
+		wlits.push_back(WeightLiteral(c, 5));
+		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 2L);
+		CPPUNIT_ASSERT_EQUAL(6, pbc->calculateSlack());
 	}
 
 	void testIsSingleClause() {

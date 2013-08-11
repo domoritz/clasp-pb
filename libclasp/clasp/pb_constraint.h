@@ -174,6 +174,8 @@ public:
 	//! Return true it the PBC represents a single clause
 	bool isClause() const;
 
+	weight_t calculateSlack() const;
+
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
 	~PBConstraint() {}
