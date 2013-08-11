@@ -53,7 +53,7 @@ inline std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& p
 {
 	cout << "PB Constraint [ ";
 	for (uint32 i = 0; i < pbc.size(); ++i) {
-		cout << std::showpos << pbc.weight(i) << "*x" << pbc.lit(i).var() << " ";
+		cout << std::showpos << pbc.weight(i) << "*x" << pbc.lit(i) << " ";
 	}
 	cout << std::noshowpos << ">= " << pbc.bound() << " ], Slack: " << pbc.slack();
 	return cout;
