@@ -294,23 +294,41 @@ private:
 	bool multiply(weight_t x);
 
 	//! Sets all weights to 0
-	void resetWeights();
+	void reset();
 
 	//! Number of literals
 	uint32 size() const;
 
+	//! Returns position of literal in lits_, -1 means invalid
+	inline int index(Literal l) const;
+
+	//! Retuns weights vector for all valid literals
+	WeightVec weights() const;
+
+	//! Returns the sign of a literal.
+	// Since searching in the vector would be O(n), we use an index with O(1)
+	inline bool sign(Literal l) const {return lits_[index(l)].sign(); }
+
 	//! Returns the literal at position i
-	inline Literal& lit(uint32 i) { return lits_[i]; }
+	inline const Literal& lit(uint32 i) const { return lits_[i]; }
 
 	//! Returns the weight of the i'th literal
-	inline weight_t& weight(uint32 i) { return weight(lit(i)); }
+	inline weight_t weight(uint32 i) const { return weight(lit(i)); }
 
 	//! Returns the weight of a literal
-	inline weight_t& weight(Literal l) { return weights_[l.index()]; }
+	inline weight_t weight(Literal l) const {
+		if (index(l) > 0)
+			assert(l.sign() == sign(l));
+		assert(lits_.size());
+		return weights_[l.var()];
+	}
 
 	WeightVec weights_;
 	LitVec lits_;
+	// for fast literal -> position in lits_ lookup, values off by one so 0 indicates invalid
+	SizeVec index_;
 	PBConstraint* pbc_;
+	PBConstraint eliminator_;
 };
 
 /**

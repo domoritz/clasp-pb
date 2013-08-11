@@ -242,6 +242,9 @@ void PBConstraint::varElimination(Solver& s, Literal l){
 }
 
 bool PBConstraint::multiply(weight_t x){
+	if (x == 1)
+		return true;
+
 	//check for overflow
 #ifndef NDEBUG
 	if((bound_ > static_cast<wsum_t>(UINT64_MAX>>1)/x)                                 ||
@@ -525,12 +528,17 @@ PBCAggregator::PBCAggregator(Solver& s) :
 	pbc_(NULL)
 {
 	weights_.resize(s.numVars());
+	index_.resize(s.numVars());
 }
 
-void PBCAggregator::resetWeights()
+void PBCAggregator::reset()
 {
+	lits_.clear();
+	memset(&weights_[0], 0, weights_.size() * sizeof weights_[0]);
+	memset(&index_[0], 0, index_.size() * sizeof index_[0]);
 	for (uint i = 0; i < weights_.size(); ++i) {
-		weights_.assign(i, 0);
+		assert(!weights_[i]);
+		assert(!index_[i]);
 	}
 }
 
@@ -539,73 +547,119 @@ uint32 PBCAggregator::size() const
 	return lits_.size();
 }
 
+int PBCAggregator::index(Literal l) const
+{
+	const uint32 idx = index_[l.var()];
+	if (idx > 0)
+		assert(lits_[idx-1].var() == l.var());
+	return idx-1;
+}
+
+WeightVec PBCAggregator::weights() const
+{
+	WeightVec vec;
+	for (uint32 i = 0; i < lits_.size(); ++i) {
+		vec.push_back(weight(i));
+	}
+	return vec;
+}
+
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
-	//std::cout << pbc_ << " " << *pbc_ << " " << l.index() << std::endl;
+	std::cout << "Eliminate: " << l << std::endl;
+	std::cout << "Before: " << lits_ << weights() << std::endl;
 	assert(initialized());
 
-	// sometimes we are asked to eliminate variables that are
+	assert( pbc_->undo_ == 0 && "the constraint is not integrated into a solver yet");
+	//assert( weight(~l) > 0 && "can't eliminate non-existing literal");
+	//assert( pbc_->slack_ < 0 && "the constraint should be violated");
+
+	// sometimes we are asked to eliminate variables that is
 	// already eliminated
-	if (!weight(l))
+	if (!weight(~l)) {
+		std::cout << "var does not exist " << ~l << " " << lits_ << " " << weights_ << std::endl;
 		return;
+	}
 
-	static PBConstraint eliminator;
-	eliminator.reset();
-	PBConstraint::buildPBConstraint(eliminator, s, l, s.reason(l));
+	eliminator_.reset();
+	PBConstraint::buildPBConstraint(eliminator_, s, l, s.reason(l));
 
-	weight_t mel= eliminator.weight(l);
-	weight_t mag= weight(l);
+	weight_t mel= eliminator_.weight(l);
+	weight_t mag= weight(~l);
 	weight_t mgcd= gcd(mel, mag);
+
+	assert(mag);
+	assert(mel);
 
 	mel= mel/mgcd;
 	mag= mag/mgcd;
 
 	// TODO: From thesis: "Checks if the sum of the slacks is non-negative and applies weakening if it is not"
-	if (mag*eliminator.slack_ + mel*pbc_->slack_ >= 0 ){
-		eliminator.weaken(s,l);
+	if (mag*eliminator_.slack_ + mel*pbc_->slack_ >= 0 ){
+		eliminator_.weaken(s,l);
 		mel= 1;
-		mag= weight(~l);
+		mag= -weight(~l);
 	}
+
+	std::cout << eliminator_ << " " << mag << " " << mel << " " << mgcd << " " << std::endl;
 
 	bool mult= multiply(mel);
 	assert( mult );
-	mult= eliminator.multiply(mag);
+	mult= eliminator_.multiply(mag);
 	assert( mult );
 
 	// this might be overestimated and is adjusted via canonicalize
-	pbc_->bound_+= eliminator.bound_;
-	pbc_->slack_ -= eliminator.bound_;
+	pbc_->bound_+= eliminator_.bound_;
+	pbc_->slack_ -= eliminator_.bound_;
 
-	for (uint i = 0; i < eliminator.size(); ++i) {
-		const WeightLiteral wl = eliminator.lits_[i];
-		if (!weights_[wl.first.index()]) {
-			lits_.push_back(wl.first);
+	std::cout << "Before elimination: " << lits_ << weights() << std::endl;
+
+	//std::cout << pbc_->calculateSlack() << " " << pbc_->slack() << std::endl;
+	//assert(pbc_->calculateSlack() == pbc_->slack());
+
+	// cutting planes inference
+	for (uint i = 0; i < eliminator_.size(); ++i) {
+		const WeightLiteral wl = eliminator_.lits_[i];
+		const Literal l = wl.first;
+		const weight_t w = wl.second;
+		// add lit to lits_, if not already in there
+		if (!weight(l)) {
+			std::cout << "Added " << l << std::endl;
+			lits_.push_back(l);
+			index_[l.var()] = lits_.size();
 		}
-		weights_[wl.first.index()] += wl.second;
-		if (!weights_[wl.first.index()]) {
-			// remove lit from lits_, need to go through it
-			// TODO: index
-			uint32 i = 0;
-			LitVec::iterator it = lits_.begin();
-			for (; it != lits_.end(); it++) {
-				if (*it == wl.first) {
-					lits_.erase(lits_.begin()+i, lits_.begin()+i+1);
-					break;
-				}
+		if (l.sign() == sign(l)) {
+			weights_[l.var()] += w;
+			pbc_->slack_ += w;
+		} else {
+			weights_[l.var()] -= w;
+			pbc_->bound_ -= w;
+		}
+		// remove lit from lits_ if eliminated
+		if (!weight(l)) {
+			std::cout << "Eliminated " << l << std::endl;
+			uint32 idx = index(l);
+			lits_.erase(lits_.begin()+idx);
+			for (LitVec::iterator it = lits_.begin()+idx; it != lits_.end(); it++) {
+				index_[(*it).var()]--;
 			}
-			assert(it != lits_.end() && "Haven't found what I'm looking for.");
 		}
-		pbc_->slack_ += wl.second;
 	}
+
+	std::cout << "After: " << lits_ << std::endl;
+	std::cout << "===========" << std::endl;
+
+	//assert(pbc_->calculateSlack() == pbc_->slack());
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
 {
 	assert(initialized());
+	assert(pbc_->calculateSlack() == pbc_->slack());
 	pbc_->lits_.clear();
 	pbc_->lits_.resize(size());
 	for (uint i = 0; i < size(); ++i) {
-		pbc_->lits_.assign(i, WeightLiteral(lit(i), weight(i)));
+		pbc_->lits_[i] = WeightLiteral(lit(i), weight(i));
 	}
 	pbc_->canonicalize(s);
 	PBConstraint* p = pbc_;
@@ -620,10 +674,13 @@ bool PBCAggregator::initialized() const
 
 bool PBCAggregator::multiply(weight_t x)
 {
+	if (x == 1)
+		return true;
+
 	// ToDo: checks
 
 	for(LitVec::size_type i= 0; i != lits_.size(); ++i){
-		weights_[lits_[i].index()] *= x;
+		weights_[lits_[i].var()] *= x;
 	}
 	pbc_->slack_ *= x;
 	pbc_->bound_ *= x;
@@ -632,15 +689,20 @@ bool PBCAggregator::multiply(weight_t x)
 }
 
 void PBCAggregator::setPBC(PBConstraint *pbc) {
-	resetWeights();
+	reset();
 	assert(!initialized());
+
+	std::cout << "Initialize with: " << *pbc << std::endl;
 
 	pbc_ = pbc;
 
 	lits_.reserve(pbc_->size());
 	for (uint i = 0; i < pbc_->size(); ++i) {
 		lits_.push_back(pbc_->lit(i));
-		weights_.assign(pbc_->lit(i).index(), pbc_->weight(i));
+		weights_[pbc_->lit(i).var()] = pbc_->weight(i);
+		index_[pbc_->lit(i).var()] = lits_.size();
+		assert(weight(lit(i)) == pbc_->weight(i));
+		assert(pbc_->lit(i) == lit(i));
 	}
 }
 
