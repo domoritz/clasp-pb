@@ -596,7 +596,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	mel= mel/mgcd;
 	mag= mag/mgcd;
 
-	// TODO: From thesis: "Checks if the sum of the slacks is non-negative and applies weakening if it is not"
+	// TODO: From thesis: "Checks if the sum of the slacks is negative and applies weakening if it is not"
 	if (mag*eliminator_.slack_ + mel*pbc_->slack_ >= 0 ){
 		eliminator_.weaken(s,l);
 		mel= 1;
@@ -651,13 +651,14 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	std::cout << "After: " << lits_ << std::endl;
 	std::cout << "===========" << std::endl;
 
-	//assert(pbc_->calculateSlack() == pbc_->slack());
+	std::cout << pbc_->calculateSlack(s) << " " << pbc_->slack() << std::endl;
+	assert(pbc_->calculateSlack(s) <= pbc_->slack());
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
 {
 	assert(initialized());
-	assert(pbc_->calculateSlack() == pbc_->slack());
+	assert(pbc_->calculateSlack(s) == pbc_->slack());
 	pbc_->lits_.clear();
 	pbc_->lits_.resize(size());
 	for (uint i = 0; i < size(); ++i) {
