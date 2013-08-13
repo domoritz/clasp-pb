@@ -276,7 +276,7 @@ public:
 		wlits.push_back(WeightLiteral(b, 2));
 		wlits.push_back(WeightLiteral(c, 5));
 		PBConstraint::PBConstraint* pbc = new PBConstraint::PBConstraint(wlits, 2L);
-		CPPUNIT_ASSERT_EQUAL(6, pbc->calculateSlack());
+		CPPUNIT_ASSERT_EQUAL(6, pbc->calculateSlack(*solver));
 	}
 
 	void testIsSingleClause() {

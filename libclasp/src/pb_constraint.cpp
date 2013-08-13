@@ -288,10 +288,12 @@ bool PBConstraint::isClause() const
 	return false;
 }
 
-weight_t PBConstraint::calculateSlack() const
+weight_t PBConstraint::calculateSlack(const Solver &s) const
 {
 	weight_t slack = 0;
 	for (LitVec::size_type i= 0; i != lits_.size(); ++i){
+		if (s.isFalse(lits_[i].first))
+			continue;
 		slack += lits_[i].second;
 	}
 	slack -= bound_;
