@@ -293,6 +293,9 @@ private:
 	//! Multiply constraint with given factor
 	bool multiply(weight_t x);
 
+	//! Weaken constraint to clause of false literals (and p if it is specified)
+	void weaken(Solver &s, Literal p = Literal(0, true));
+
 	//! Sets all weights to 0
 	void reset();
 
@@ -304,6 +307,14 @@ private:
 
 	//! Retuns weights vector for all valid literals
 	WeightVec weights() const;
+
+	weight_t maxWeight() const {
+		weight_t m = std::numeric_limits<weight_t>::max();
+		for (uint i = 0; i < size(); ++i) {
+			m = std::max(m, weight(i));
+		}
+		return m;
+	}
 
 	//! Returns the sign of a literal.
 	// Since searching in the vector would be O(n), we use an index with O(1)
@@ -320,7 +331,11 @@ private:
 		if (index(l) > 0)
 			assert(l.sign() == sign(l));
 		assert(lits_.size());
-		return weights_[l.var()];
+		return weight(l.var());
+	}
+
+	inline weight_t weight(Var v) const {
+		return weights_[v];
 	}
 
 	WeightVec weights_;
