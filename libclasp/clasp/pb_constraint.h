@@ -313,17 +313,13 @@ private:
 	//! Adds the weight literals of the aggregator to vec
 	void weightLits(WeightLitVec &vec) const;
 
+	//! Get the maximum weight of the pbc's weight literals. O(N)
 	weight_t maxWeight() const {
-		weight_t m = std::numeric_limits<weight_t>::max();
-		for (uint i = 0; i < size(); ++i) {
-			m = std::max(m, weight(i));
+		weight_t m = std::numeric_limits<weight_t>::min();
+		for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
+			m = std::max(m, weight(*it));
 		}
 		return m;
-	}
-
-	//! Returns the i'th variable (O(N))
-	inline Var var(uint32 i) const {
-		return vars_.at(i);
 	}
 
 	//! Returns the sign of a literal (O(1))

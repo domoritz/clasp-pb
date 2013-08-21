@@ -558,7 +558,7 @@ void PBCAggregator::weightLits(WeightLitVec& vec) const
 {
 	vec.reserve(size() + vec.size());
 	for (VarDeque::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
-		Literal l(*it, sign(*it));
+		const Literal l(*it, sign(*it));
 		vec.push_back(WeightLiteral(l, weight(*it)));
 	}
 }
@@ -566,16 +566,18 @@ void PBCAggregator::weightLits(WeightLitVec& vec) const
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
 	std::cout << "Eliminate: " << l << " weight:" << weight(l.var()) << " from: " << weightLits() << std::endl;
-	std::cout << "Before: " << weightLits() << std::endl;
+	std::cout << "Before: " << weightLits() << " >= " << pbc_->bound() << std::endl;
 	assert(initialized());
 
-	assert( pbc_->undo_ == 0 && "the constraint is not integrated into a solver yet");
-	//assert( weight(~l) > 0 && "can't eliminate non-existing literal");
-	//assert( pbc_->slack_ < 0 && "the constraint should be violated");
+	assert(pbc_->undo_ == 0 && "the constraint is not integrated into a solver yet");
+	assert(pbc_->slack_ < 0 && "the constraint should be violated");
 
-	// sometimes we are asked to eliminate variables that is
+	// sometimes we are asked to eliminate variables that are
 	// already eliminated
 	if (!(weight(l.var()) && sign(l.var()) == (~l).sign())) {
+		eliminator_.reset();
+		PBConstraint::buildPBConstraint(eliminator_, s, l, s.reason(l));
+		std::cout << eliminator_ << std::endl;
 		std::cout << "var does not exist " << ~l << " " << weightLits() << std::endl;
 		return;
 	}
@@ -598,23 +600,27 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		 (static_cast<wsum_t>(maxWeight())*mel > static_cast<wsum_t>(UINT32_MAX / 4) )){
 		// we can't guarantee that the added values do not overflow!
 		// this is a really crude version of overflow handling
+		std::cout << "Weaken" << weightLits() << std::endl;
 		weaken(s);
-		mag= 1;
-		mel= eliminator_.weight(l);
+		mag = 1;
+		mel = eliminator_.weight(l);
 	}
 	if ((eliminator_.bound_ > static_cast<wsum_t>(UINT64_MAX / 4)/mag )  ||
 		(pbc_->slack_ > (std::numeric_limits<wsum_t>::max() / mag) / 2)       ||
 		(static_cast<wsum_t>(eliminator_.lits_[0].second)*mag > static_cast<wsum_t>(UINT32_MAX / 4) )){
+		std::cout << "Weaken" << eliminator_ << std::endl;
 		eliminator_.weaken(s,l);
-		mel= 1;
-		mag= weight(~l);
+		mel = 1;
+		mag = weight(~l);
 	}
 
 	// TODO: From thesis: "Checks if the sum of the slacks is negative and applies weakening if it is not"
 	if (mag*eliminator_.slack_ + mel*pbc_->slack_ >= 0 ){
+		std::cout << "Weaken" << weightLits() << " ";
 		eliminator_.weaken(s,l);
 		mel= 1;
 		mag= weight(~l);
+		std::cout << "to" << weightLits();
 	}
 
 	std::cout << "Eliminator: " << eliminator_ << " mag: " << mag << " mel: " << mel << " mgcd: " << mgcd << " " << std::endl;
@@ -624,64 +630,104 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	mult= eliminator_.multiply(mag);
 	assert( mult );
 
-	// this might be overestimated and is adjusted via canonicalize
+	// this might be overestimated and is adjusted later
 	pbc_->bound_ += eliminator_.bound_;
-	pbc_->slack_ -= eliminator_.bound_;
+	pbc_->slack_ -= eliminator_.slack_;
 
-	std::cout << "Before elimination: " << weightLits() << std::endl;
-
-	//std::cout << pbc_->calculateSlack() << " " << pbc_->slack() << std::endl;
-	//assert(pbc_->calculateSlack() == pbc_->slack());
+	std::cout << "Before elimination: " << weightLits() << " >= " << pbc_->bound() << std::endl;
 
 	// cutting planes inference
 	for (LitVec::size_type i = 0; i < eliminator_.size(); ++i) {
 		const WeightLiteral wl = eliminator_.lits_[i];
-		const Literal l = wl.first;
-		const weight_t w = wl.second;
-		// add var to vars_, if not already in there
-		if (!weight(l.var())) {
-			std::cout << "Added " << l << std::endl;
-			vars_.push_back(l.var());
-		}
-		if (l.sign() == sign(l)) {
-			weights_[l.var()] += w;
-			if (!s.isFalse(l))
-				pbc_->slack_ += w;
+		const Literal lit = wl.first;
+		const Var v = lit.var();
+		weight_t w = wl.second;
+		assert(w > 0);
+		if (!weight(lit.var())) {
+			// new variable
+			std::cout << "Added " << lit << std::endl;
+			vars_.push_back(v);
+			weights_[v] = w;
+			signs_[v] = lit.sign();
 		} else {
-			weights_[l.var()] -= w;
-			pbc_->bound_ -= w;
-			pbc_->slack_ += w;
-			if(!s.isFalse(~l))
-				pbc_->slack_ -= w;
+			std::cout << "Found " << lit << std::endl;
+			// found variable in pbc
+
+			if (lit.sign() == sign(lit)) {
+				weights_[v] += w;
+			} else {
+				if (s.value(v) == value_free) {
+					//pbc_->slack_ -= w;
+					// we double counted this amount when we calculated the slack
+					pbc_->slack_ -= std::min(w, weight(v));
+					//assert( slack_adjust >= 0 );
+				}
+
+				// weight(other) == weight in pbc aka weights_[v]
+				// weight(i) == w (eliminator)
+
+				pbc_->bound_ -= w; // assume weights_[v] >= w
+				weights_[v] -= w;
+				if (weight(v) < 0) { // assumption was wrong
+					signs_[v] = lit.sign();
+					weights_[v] = -weight(v);
+					pbc_->bound_ += weight(v);
+				} else if (weight(v) == 0) {
+					std::cout << "Eliminated " << lit << std::endl;
+					VarDeque::iterator it = std::find(vars_.begin(), vars_.end(), v);
+					vars_.erase(it);
+					continue;
+				}
+
+				assert(weight(v) > 0);
+			}
 		}
-		// remove var from vars_ if eliminated
-		if (!weight(l.var())) {
-			std::cout << "Eliminated " << l << std::endl;
-			VarDeque::iterator it = std::find(vars_.begin(), vars_.end(), l.var());
-			vars_.erase(it);
+	}
+
+	pbc_->bound_ = std::max(0LL, pbc_->bound());
+
+	//assert(pbc_->bound_ > 0);
+
+	for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
+		const Var v = *it;
+
+		assert(weight(v) > 0);
+
+		if (static_cast<wsum_t>(weight(v)) > pbc_->bound()) {
+			const Literal lit(*it, sign(*it));
+			if (!s.isFalse(lit))
+				pbc_->slack_ -= (weight(v) - pbc_->bound());
+			weights_[v] = pbc_->bound();
 		}
 	}
 
 	std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
-	std::cout << "===========" << std::endl;
 
-	std::cout << calculateSlack(s) << " " << pbc_->slack() << std::endl;
+	std::cout << "calculated: " << calculateSlack(s) << " set: " << pbc_->slack() << std::endl;
 	//pbc_->slack_ = pbc_->calculateSlack(s);
-	if (size())
-		assert(calculateSlack(s) == pbc_->slack());
+	//if (size())
+	//	assert(calculateSlack(s) == pbc_->slack());
+
+	assert(pbc_->slack_ < 0 && "the constraint should still be violated");
+
+	std::cout << "===========" << std::endl;
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
 {
 	assert(initialized());
+
 	pbc_->lits_.clear();
 	weightLits(pbc_->lits_);
-	std::cout << *pbc_ << std::endl;
+	std::cout << "===========\nFinalize: " << *pbc_ << std::endl;
 	pbc_->canonicalize(s);
-	// TODO: Think about this: Does the slack have to be correct here or does it not matter?
+	pbc_->slack_ = pbc_->slack();
+	std::cout << "Canonicalized: " << *pbc_ << std::endl;
+	// TODO: Think about this: Why can we not use the previous slack? Does it matter?
 	//assert(pbc_->calculateSlack(s) == pbc_->slack());
 	PBConstraint* p = pbc_;
 	pbc_ = NULL;
+	std::cout << "++++++++++++++" << std::endl;
 	return p;
 }
 
@@ -709,7 +755,7 @@ bool PBCAggregator::multiply(weight_t x)
 void PBCAggregator::weaken(Solver& s, Literal p)
 {
 	assert( p == Literal(0, true) || weight(p) > 0 );
-	//assert( undo_ == 0 && "this should not be integrated yet");
+	assert( pbc_->undo_ == 0 && "this should not be integrated yet");
 	VarDeque tmp;
 	for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
 		Literal l(*it, sign(*it));
@@ -749,6 +795,7 @@ void PBCAggregator::setPBC(PBConstraint *pbc) {
 		vars_.push_back(v);
 		weights_[v] = pbc_->weight(i);
 		signs_[v] = pbc_->lit(i).sign();
+		assert(weight(v) > 0);
 		assert(weight(v) == pbc_->weight(i));
 		assert(sign(v) == pbc_->lit(i).sign());
 	}
