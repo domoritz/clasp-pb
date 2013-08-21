@@ -565,7 +565,7 @@ void PBCAggregator::weightLits(WeightLitVec& vec) const
 
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
-	std::cout << "Eliminate: " << l << " " << weight(l.var()) << std::endl;
+	std::cout << "Eliminate: " << l << " weight:" << weight(l.var()) << " from: " << weightLits() << std::endl;
 	std::cout << "Before: " << weightLits() << std::endl;
 	assert(initialized());
 
@@ -575,8 +575,8 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 
 	// sometimes we are asked to eliminate variables that is
 	// already eliminated
-	if (!weight(l.var())) {
-		std::cout << "var does not exist " << ~l << " " << weightLits() << " " << weights_ << std::endl;
+	if (!(weight(l.var()) && sign(l.var()) == (~l).sign())) {
+		std::cout << "var does not exist " << ~l << " " << weightLits() << std::endl;
 		return;
 	}
 
@@ -667,7 +667,8 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 
 	std::cout << calculateSlack(s) << " " << pbc_->slack() << std::endl;
 	//pbc_->slack_ = pbc_->calculateSlack(s);
-	assert(calculateSlack(s) == pbc_->slack());
+	if (size())
+		assert(calculateSlack(s) == pbc_->slack());
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
@@ -675,6 +676,7 @@ PBConstraint *PBCAggregator::finalize(Solver &s)
 	assert(initialized());
 	pbc_->lits_.clear();
 	weightLits(pbc_->lits_);
+	std::cout << *pbc_ << std::endl;
 	pbc_->canonicalize(s);
 	// TODO: Think about this: Does the slack have to be correct here or does it not matter?
 	//assert(pbc_->calculateSlack(s) == pbc_->slack());
