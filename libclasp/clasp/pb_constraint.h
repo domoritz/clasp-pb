@@ -299,6 +299,8 @@ private:
 	//! Weaken constraint to clause of false literals (and p if it is specified)
 	void weaken(Solver &s, Literal p = Literal(0, true));
 
+	weight_t calculateSlack(const Solver &s) const;
+
 	//! Sets all weights to 0
 	void reset();
 

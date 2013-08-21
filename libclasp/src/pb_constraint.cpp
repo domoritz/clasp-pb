@@ -662,13 +662,12 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		}
 	}
 
-
 	std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
 	std::cout << "===========" << std::endl;
 
-	std::cout << pbc_->calculateSlack(s) << " " << pbc_->slack() << std::endl;
+	std::cout << calculateSlack(s) << " " << pbc_->slack() << std::endl;
 	//pbc_->slack_ = pbc_->calculateSlack(s);
-	assert(pbc_->calculateSlack(s) == pbc_->slack());
+	assert(calculateSlack(s) == pbc_->slack());
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
@@ -677,8 +676,8 @@ PBConstraint *PBCAggregator::finalize(Solver &s)
 	pbc_->lits_.clear();
 	weightLits(pbc_->lits_);
 	pbc_->canonicalize(s);
-	std::cout << pbc_->calculateSlack(s) << " " << pbc_->slack() << std::endl;
-	assert(pbc_->calculateSlack(s) == pbc_->slack());
+	// TODO: Think about this: Does the slack have to be correct here or does it not matter?
+	//assert(pbc_->calculateSlack(s) == pbc_->slack());
 	PBConstraint* p = pbc_;
 	pbc_ = NULL;
 	return p;
@@ -720,6 +719,19 @@ void PBCAggregator::weaken(Solver& s, Literal p)
 	vars_ = tmp;
 	pbc_->bound_ = 1;
 	pbc_->slack_ = s.isTrue(p) ? 0 : -1;
+}
+
+weight_t PBCAggregator::calculateSlack(const Solver &s) const
+{
+	weight_t slack = 0;
+	for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
+		Literal l(*it, sign(*it));
+		if (s.isFalse(l))
+			continue;
+		slack += weight(*it);
+	}
+	slack -= pbc_->bound();
+	return slack;
 }
 
 void PBCAggregator::setPBC(PBConstraint *pbc) {
