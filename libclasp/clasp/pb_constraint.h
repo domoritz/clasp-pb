@@ -27,6 +27,7 @@
 #endif
 
 #include <tr1/unordered_map>
+#include <deque>
 #include <algorithm>
 #include <clasp/constraint.h>
 #include <clasp/weight_constraint.h>
@@ -290,6 +291,8 @@ public:
 	bool initialized() const;
 
 private:
+	typedef std::deque<Var> VarDeque;
+
 	//! Multiply constraint with given factor
 	bool multiply(weight_t x);
 
@@ -302,11 +305,11 @@ private:
 	//! Number of literals
 	uint32 size() const;
 
-	//! Returns position of literal in lits_, -1 means invalid
-	inline int index(Literal l) const;
+	//! Retuns weightLits vector for all valid literals
+	WeightLitVec weightLits() const;
 
-	//! Retuns weights vector for all valid literals
-	WeightVec weights() const;
+	//! Adds the weight literals of the aggregator to vec
+	void weightLits(WeightLitVec &vec) const;
 
 	weight_t maxWeight() const {
 		weight_t m = std::numeric_limits<weight_t>::max();
@@ -316,21 +319,23 @@ private:
 		return m;
 	}
 
-	//! Returns the sign of a literal.
-	// Since searching in the vector would be O(n), we use an index with O(1)
-	inline bool sign(Literal l) const {return lits_[index(l)].sign(); }
+	//! Returns the i'th variable (O(N))
+	inline Var var(uint32 i) const {
+		return vars_.at(i);
+	}
 
-	//! Returns the literal at position i
-	inline const Literal& lit(uint32 i) const { return lits_[i]; }
+	//! Returns the sign of a literal (O(1))
+	inline bool sign(Literal l) const {
+		return sign(l.var());
+	}
 
-	//! Returns the weight of the i'th literal
-	inline weight_t weight(uint32 i) const { return weight(lit(i)); }
+	inline bool sign(Var v) const {
+		return signs_.at(v);
+	}
 
-	//! Returns the weight of a literal
+	//! Returns the weight of a literal (O(1))
 	inline weight_t weight(Literal l) const {
-		if (index(l) > 0)
-			assert(l.sign() == sign(l));
-		assert(lits_.size());
+		assert(l.sign() == sign(l));
 		return weight(l.var());
 	}
 
@@ -338,10 +343,13 @@ private:
 		return weights_[v];
 	}
 
+	//! Weigths for literals, one for each variable
 	WeightVec weights_;
-	LitVec lits_;
-	// for fast literal -> position in lits_ lookup, values off by one so 0 indicates invalid
-	SizeVec index_;
+	//! Signs of literals, one for each variable
+	BitVec signs_;
+	//! Variables in aggregator, variable size
+	VarDeque vars_;
+
 	PBConstraint* pbc_;
 	PBConstraint eliminator_;
 };

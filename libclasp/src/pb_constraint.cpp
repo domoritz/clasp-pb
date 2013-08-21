@@ -326,6 +326,7 @@ void PBConstraint::weaken(Solver& s, Literal p){
 wsum_t PBConstraint::canonicalize(Solver& s) {
 	std::vector<bool>& tag= s.pb_tag_;
 
+	// tag is cleared in step 2
 	tag.resize( s.numVars()+1, false );
 
 	wsum_t slack_adjust= 0;
@@ -337,6 +338,7 @@ wsum_t PBConstraint::canonicalize(Solver& s) {
 		assert (weight(i) > 0 );
 
 		if( tag[lit(i).var()] ){
+			// TODO: Use index, rather than bool vector
 			// there is a previous occurance of lit(i) or ~lit(i)
 			for (other= 0; other < j && lit(other).var() != lit(i).var(); ++other) { ; }
 
@@ -530,46 +532,41 @@ PBCAggregator::PBCAggregator(Solver& s) :
 	pbc_(NULL)
 {
 	weights_.resize(s.numVars());
-	index_.resize(s.numVars());
+	signs_.resize(s.numVars());
 }
 
 void PBCAggregator::reset()
 {
-	lits_.clear();
-	memset(&weights_[0], 0, weights_.size() * sizeof weights_[0]);
-	memset(&index_[0], 0, index_.size() * sizeof index_[0]);
-	for (uint i = 0; i < weights_.size(); ++i) {
-		assert(!weights_[i]);
-		assert(!index_[i]);
-	}
+	vars_.clear();
+	std::fill(weights_.begin(), weights_.end(), 0);
+	std::fill(signs_.begin(), signs_.end(), false);
 }
 
 uint32 PBCAggregator::size() const
 {
-	return lits_.size();
+	return vars_.size();
 }
 
-int PBCAggregator::index(Literal l) const
+WeightLitVec PBCAggregator::weightLits() const
 {
-	const uint32 idx = index_[l.var()];
-	if (idx > 0)
-		assert(lits_[idx-1].var() == l.var());
-	return idx-1;
-}
-
-WeightVec PBCAggregator::weights() const
-{
-	WeightVec vec;
-	for (uint32 i = 0; i < lits_.size(); ++i) {
-		vec.push_back(weight(i));
-	}
+	WeightLitVec vec;
+	weightLits(vec);
 	return vec;
+}
+
+void PBCAggregator::weightLits(WeightLitVec& vec) const
+{
+	vec.reserve(size() + vec.size());
+	for (VarDeque::const_iterator it = vars_.begin(); it != vars_.end(); ++it) {
+		Literal l(*it, sign(*it));
+		vec.push_back(WeightLiteral(l, weight(*it)));
+	}
 }
 
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
-	std::cout << "Eliminate: " << l << std::endl;
-	std::cout << "Before: " << lits_ << weights() << std::endl;
+	std::cout << "Eliminate: " << l << " " << weight(l.var()) << std::endl;
+	std::cout << "Before: " << weightLits() << std::endl;
 	assert(initialized());
 
 	assert( pbc_->undo_ == 0 && "the constraint is not integrated into a solver yet");
@@ -578,8 +575,8 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 
 	// sometimes we are asked to eliminate variables that is
 	// already eliminated
-	if (!weight(~l)) {
-		std::cout << "var does not exist " << ~l << " " << lits_ << " " << weights_ << std::endl;
+	if (!weight(l.var())) {
+		std::cout << "var does not exist " << ~l << " " << weightLits() << " " << weights_ << std::endl;
 		return;
 	}
 
@@ -631,7 +628,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	pbc_->bound_ += eliminator_.bound_;
 	pbc_->slack_ -= eliminator_.bound_;
 
-	std::cout << "Before elimination: " << lits_ << weights() << std::endl;
+	std::cout << "Before elimination: " << weightLits() << std::endl;
 
 	//std::cout << pbc_->calculateSlack() << " " << pbc_->slack() << std::endl;
 	//assert(pbc_->calculateSlack() == pbc_->slack());
@@ -641,48 +638,47 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		const WeightLiteral wl = eliminator_.lits_[i];
 		const Literal l = wl.first;
 		const weight_t w = wl.second;
-		// add lit to lits_, if not already in there
+		// add var to vars_, if not already in there
 		if (!weight(l.var())) {
 			std::cout << "Added " << l << std::endl;
-			lits_.push_back(l);
-			index_[l.var()] = lits_.size();
+			vars_.push_back(l.var());
 		}
 		if (l.sign() == sign(l)) {
 			weights_[l.var()] += w;
-			pbc_->slack_ += w;
+			if (!s.isFalse(l))
+				pbc_->slack_ += w;
 		} else {
 			weights_[l.var()] -= w;
 			pbc_->bound_ -= w;
+			pbc_->slack_ += w;
+			if(!s.isFalse(~l))
+				pbc_->slack_ -= w;
 		}
-		// remove lit from lits_ if eliminated
-		if (!weight(l)) {
+		// remove var from vars_ if eliminated
+		if (!weight(l.var())) {
 			std::cout << "Eliminated " << l << std::endl;
-			uint32 idx = index(l);
-			lits_.erase(lits_.begin()+idx);
-			for (LitVec::iterator it = lits_.begin()+idx; it != lits_.end(); it++) {
-				index_[(*it).var()]--;
-			}
+			VarDeque::iterator it = std::find(vars_.begin(), vars_.end(), l.var());
+			vars_.erase(it);
 		}
 	}
 
-	std::cout << "After: " << lits_ << std::endl;
+
+	std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
 	std::cout << "===========" << std::endl;
 
-	//std::cout << pbc_->calculateSlack(s) << " " << pbc_->slack() << std::endl;
-	pbc_->slack_ = pbc_->calculateSlack(s);
-	//assert(pbc_->calculateSlack(s) <= pbc_->slack());
+	std::cout << pbc_->calculateSlack(s) << " " << pbc_->slack() << std::endl;
+	//pbc_->slack_ = pbc_->calculateSlack(s);
+	assert(pbc_->calculateSlack(s) == pbc_->slack());
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
 {
 	assert(initialized());
-	//assert(pbc_->calculateSlack(s) == pbc_->slack());
 	pbc_->lits_.clear();
-	pbc_->lits_.resize(size());
-	for (LitVec::size_type i = 0; i < size(); ++i) {
-		pbc_->lits_[i] = WeightLiteral(lit(i), weight(i));
-	}
+	weightLits(pbc_->lits_);
 	pbc_->canonicalize(s);
+	std::cout << pbc_->calculateSlack(s) << " " << pbc_->slack() << std::endl;
+	assert(pbc_->calculateSlack(s) == pbc_->slack());
 	PBConstraint* p = pbc_;
 	pbc_ = NULL;
 	return p;
@@ -700,8 +696,8 @@ bool PBCAggregator::multiply(weight_t x)
 
 	// ToDo: checks
 
-	for(LitVec::size_type i= 0; i != lits_.size(); ++i){
-		weights_[lits_[i].var()] *= x;
+	for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
+		weights_[*it] *= x;
 	}
 	pbc_->slack_ *= x;
 	pbc_->bound_ *= x;
@@ -711,18 +707,17 @@ bool PBCAggregator::multiply(weight_t x)
 
 void PBCAggregator::weaken(Solver& s, Literal p)
 {
-	assert( weight(p) > 0 || p == Literal(0, true) );
+	assert( p == Literal(0, true) || weight(p) > 0 );
 	//assert( undo_ == 0 && "this should not be integrated yet");
-	LitVec tmp;
-	for (LitVec::size_type i= 0; i != lits_.size(); ++i){
-		Literal l = lit(i);
+	VarDeque tmp;
+	for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
+		Literal l(*it, sign(*it));
 		if ( s.isFalse(l) || l == p ){
-			weights_[l.var()] = 1;
-			tmp.push_back(l);
-			index_[l.var()] = tmp.size();
+			weights_[*it] = 1;
+			tmp.push_back(*it);
 		}
 	}
-	lits_= tmp;
+	vars_ = tmp;
 	pbc_->bound_ = 1;
 	pbc_->slack_ = s.isTrue(p) ? 0 : -1;
 }
@@ -735,14 +730,16 @@ void PBCAggregator::setPBC(PBConstraint *pbc) {
 
 	pbc_ = pbc;
 
-	lits_.reserve(pbc_->size());
 	for (LitVec::size_type i = 0; i < pbc_->size(); ++i) {
-		lits_.push_back(pbc_->lit(i));
-		weights_[pbc_->lit(i).var()] = pbc_->weight(i);
-		index_[pbc_->lit(i).var()] = lits_.size();
-		assert(weight(lit(i)) == pbc_->weight(i));
-		assert(pbc_->lit(i) == lit(i));
+		Var v = pbc_->lit(i).var();
+		vars_.push_back(v);
+		weights_[v] = pbc_->weight(i);
+		signs_[v] = pbc_->lit(i).sign();
+		assert(weight(v) == pbc_->weight(i));
+		assert(sign(v) == pbc_->lit(i).sign());
 	}
+
+	std::cout << "WeightLits: " << weightLits() << std::endl;
 }
 
 
