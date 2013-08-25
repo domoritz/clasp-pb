@@ -42,6 +42,7 @@ inline std::ostream& operator<<(std::ostream& cout, const Literal& p) {
 	return cout;
 }
 
+// for minisat++
 inline std::ostream& operator<<(std::ostream& cout, const Lit& p) {
 	if (sign(p))
 		cout << "-";
@@ -49,11 +50,16 @@ inline std::ostream& operator<<(std::ostream& cout, const Lit& p) {
 	return cout;
 }
 
+inline std::ostream& operator<<(std::ostream& cout, const WeightLiteral& wl) {
+	cout << wl.second << "*x" << wl.first;
+	return cout;
+}
+
 inline std::ostream& operator<<(std::ostream& cout, const Clasp::PBConstraint& pbc)
 {
 	cout << "PB Constraint [ ";
 	for (uint32 i = 0; i < pbc.size(); ++i) {
-		cout << std::showpos << pbc.weight(i) << "*x" << pbc.lit(i).var() << " ";
+		cout << std::showpos << pbc.weight(i) << "*x" << pbc.lit(i) << " ";
 	}
 	cout << std::noshowpos << ">= " << pbc.bound() << " ], Slack: " << pbc.slack();
 	return cout;
