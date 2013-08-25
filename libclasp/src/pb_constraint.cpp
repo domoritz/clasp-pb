@@ -632,7 +632,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 
 	// this might be overestimated and is adjusted later
 	pbc_->bound_ += eliminator_.bound_;
-	pbc_->slack_ -= eliminator_.slack_;
+	pbc_->slack_ += eliminator_.slack_;
 
 	std::cout << "Before elimination: " << weightLits() << " >= " << pbc_->bound() << std::endl;
 
@@ -684,9 +684,11 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		}
 	}
 
-	pbc_->bound_ = std::max(0LL, pbc_->bound());
+	if (pbc_->bound() < 0) {
+		pbc_->bound_ = 0;
+	}
 
-	//assert(pbc_->bound_ > 0);
+	assert(pbc_->bound_ > 0);
 
 	for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
 		const Var v = *it;
