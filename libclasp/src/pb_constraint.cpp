@@ -87,7 +87,7 @@ void PBConstraint::buildPBConstraint(PBConstraint& pbc, Solver& s, const Literal
 			}
 		}
 		if (conflict){
-			// this is a conflicting constraint, but hasn't updated its slack!
+			// this is a conflicting constraint but hasn't updated its slack!
 			pbc.slack_-= pbc.weight(p);
 		}
 	}
