@@ -566,8 +566,8 @@ void PBCAggregator::weightLits(WeightLitVec& vec) const
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
 	//std::cout << "============" << std::endl;
-	//std::cout << "Eliminate: " << l << " weight:" << weight(l.var()) << " from: " << weightLits() << std::endl;
-	//std::cout << "Before: " << weightLits() << " >= " << pbc_->bound() << std::endl;
+    std::cout << "Before: " << weightLits() << " >= " << pbc_->bound() << std::endl;
+    std::cout << "Eliminate: " << l << " weight:" << weight(l.var()) << std::endl;
 	assert(initialized());
 
 	assert(pbc_->undo_ == 0 && "the constraint is not integrated into a solver yet");
@@ -704,7 +704,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		}
 	}
 
-	//std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
+    std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
 
 	//std::cout << "calculated: " << calculateSlack(s) << " set: " << pbc_->slack() << std::endl;
 	//pbc_->slack_ = pbc_->calculateSlack(s);
