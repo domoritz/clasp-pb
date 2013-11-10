@@ -191,7 +191,9 @@ inline void swap(Literal& l, Literal& r) {
 typedef PodVector<Var>::type VarVec;          /**< A vector of variables.  */
 typedef PodVector<Literal>::type LitVec;      /**< A vector of literals.   */
 typedef PodVector<weight_t>::type WeightVec;  /**< A vector of weights.    */
+typedef PodVector<size_t>::type SizeVec;      /**< A vector of sizes or indexes.*/
 typedef PodVector<wsum_t>::type SumVec;       /**< A vector of sums of weights. */
+typedef std::vector<bool> BitVec;       /**< A vector that stores bools.  */
 
 typedef std::pair<Literal, weight_t> WeightLiteral;  /**< A weight-literal. */
 typedef PodVector<WeightLiteral>::type WeightLitVec; /**< A vector of weight-literals. */

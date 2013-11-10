@@ -227,6 +227,8 @@ void Solver::freeMem() {
 	}
 	delete smallAlloc_;
 	delete ccMin_;
+	if (aggregator_)
+		delete aggregator_;
 	smallAlloc_   = 0;
 	ccMin_        = 0;
 }
@@ -279,6 +281,9 @@ bool Solver::endInit() {
 			else                             { initPrefValue(v, 1 + defaultLiteral(v).sign()); }
 		}
 	}
+	// create aggregator for pbc conflict resolution
+	if (strategy_.analyze)
+		aggregator_ = new PBCAggregator(*this);
 	// enable funky post propagators and
 	// force initial propagation
 	PostPropagator* ext = post_.enableFunky();
@@ -558,7 +563,8 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			a.reason(*this, p, conflict_);
 			if(strategy_.analyze) {
 				// save conflicting PBConstraint as well
-				aggregator_= new PBConstraint(*this, p, a, true);
+				PBConstraint* pbc = new PBConstraint(*this, p, a, true);
+				aggregator_->setPBC(pbc);
 			}
 		}
 		else {
@@ -569,13 +575,15 @@ void Solver::setConflict(Literal p, const Antecedent& a, uint32 data) {
 			a.reason(*this, p, conflict_);
 			if(strategy_.analyze) {
 				// save conflicting PBConstraint as well
-				aggregator_= new PBConstraint(*this, p, a, true);
+				PBConstraint* pbc = new PBConstraint(*this, p, a, true);
+				aggregator_->setPBC(pbc);
 			}
 			// restore old data
 			assign_.setData(p.var(), saved);
 		}
 	}
-	assert( !aggregator_ || aggregator_->slack() < 0 );
+	// TODO
+	//assert( !aggregator_ || aggregator_->slack() < 0 );
 }
 
 bool Solver::assume(const Literal& p) {
@@ -702,8 +710,9 @@ bool Solver::resolveConflict() {
 			uint32 uipLevel = analyzeConflict();
 			stats.updateJumps(decisionLevel(), uipLevel, btLevel_, ccInfo_.lbd());
 			undoUntil( uipLevel );
-			PBConstraint* pbRes = aggregator_;
-			aggregator_         = NULL;
+			PBConstraint* pbRes = NULL;
+			if (aggregator_)
+				pbRes = aggregator_->finalize(*this);
 			if (pbRes && pbRes->isClause()) {
 				// Subsumed by clause
 				pbRes->destroy(0, false);
@@ -914,9 +923,8 @@ uint32 Solver::analyzeConflict() {
 		}
 		--resSize; // p will be resolved out next
 		last = rhs;
-		// an earlier elimination might have removed this already!
-		if (cpAnalysis && aggregator_->weight(~p) > 0){
-			assert(aggregator_ != 0);
+		if (cpAnalysis) {
+			assert(aggregator_->initialized());
 			aggregator_->varElimination(*this, p);
 		}
 		reason(p, conflict_);

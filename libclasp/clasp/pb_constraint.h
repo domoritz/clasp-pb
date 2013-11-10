@@ -27,6 +27,7 @@
 #endif
 
 #include <tr1/unordered_map>
+#include <deque>
 #include <algorithm>
 #include <clasp/constraint.h>
 #include <clasp/weight_constraint.h>
@@ -174,6 +175,8 @@ public:
 	//! Return true it the PBC represents a single clause
 	bool isClause() const;
 
+	weight_t calculateSlack(const Solver& s) const;
+
 private:
 	PBConstraint(Solver& s, const PBConstraint& other);
 	~PBConstraint() {}
@@ -251,8 +254,107 @@ private:
 			const Solver& solver_;
 			const WeightLitVec& wlv_;
 	};
+
+	friend class PBCAggregator;
 };
 
+/**
+ * @brief Helper class to aggregate constraints during conflict analysis.
+ *		Similar to assign_ and cc_.
+ *
+ * The weight vector has a position for each literal (not just the once in the pbc)
+ * to allow fast access and checks.
+ *
+ * Usage: set pbc, call varEleimination, finalize
+ *
+ * The interal pbc variable is not updated. You need to call finalize to copy the
+ * weight literals back into the original pbc.
+ *
+ */
+class PBCAggregator
+{
+public:
+	PBCAggregator(Solver &s);
+
+	//! Set the conflicting pbc
+	/*! also set the weights and literals from the (conflicting) pbc */
+	void setPBC(PBConstraint *pbc);
+
+	//! Eliminate variable from constraint using the reason of l being true
+	/*! assert this->integrate() has not been called yet */
+	void varElimination(Solver& s, Literal l);
+
+	//! Writes the weights and literals back into the pbc
+	PBConstraint* finalize(Solver &s);
+
+	//! True if the aggregator has a pbc
+	bool initialized() const;
+
+private:
+	typedef std::deque<Var> VarDeque;
+
+	//! Multiply constraint with given factor
+	bool multiply(weight_t x);
+
+	//! Weaken constraint to clause of false literals (and p if it is specified)
+	void weaken(Solver &s, Literal p = Literal(0, true));
+
+	weight_t calculateSlack(const Solver &s) const;
+
+	//! Sets all weights to 0
+	void reset();
+
+	//! Number of literals
+	uint32 size() const;
+
+	//! Retuns weightLits vector for all valid literals
+	WeightLitVec weightLits() const;
+
+	//! Adds the weight literals of the aggregator to vec
+	void weightLits(WeightLitVec &vec) const;
+
+	//! Get the maximum weight of the pbc's weight literals. O(N)
+	weight_t maxWeight() const {
+		weight_t m = std::numeric_limits<weight_t>::min();
+		for (VarDeque::const_iterator it = vars_.begin(); it!=vars_.end(); ++it) {
+			m = std::max(m, weight(*it));
+		}
+		return m;
+	}
+
+	//! Returns the sign of a literal (O(1))
+	inline bool sign(Literal l) const {
+		return sign(l.var());
+	}
+
+	inline bool sign(Var v) const {
+		return signs_.at(v);
+	}
+
+	//! Returns the weight of a literal (O(1))
+	inline weight_t weight(Literal l) const {
+		assert(l.sign() == sign(l));
+		return weight(l.var());
+	}
+
+	inline weight_t weight(Var v) const {
+		return weights_[v];
+	}
+
+	//! Weigths for literals, one for each variable
+	WeightVec weights_;
+	//! Signs of literals, one for each variable
+	BitVec signs_;
+	//! Variables in aggregator, variable size
+	VarDeque vars_;
+
+	PBConstraint* pbc_;
+	PBConstraint eliminator_;
+};
+
+/**
+ * @brief Helper class to convert PBCs to clauses using BDDs or direct conversion
+ */
 class PbcClauseConverter {
 public:
 	PbcClauseConverter(const PBConstraint &pbc);
