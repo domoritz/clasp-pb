@@ -565,8 +565,9 @@ void PBCAggregator::weightLits(WeightLitVec& vec) const
 
 void PBCAggregator::varElimination(Solver &s, Literal l)
 {
-	std::cout << "Eliminate: " << l << " weight:" << weight(l.var()) << " from: " << weightLits() << std::endl;
-	std::cout << "Before: " << weightLits() << " >= " << pbc_->bound() << std::endl;
+	//std::cout << "============" << std::endl;
+	//std::cout << "Eliminate: " << l << " weight:" << weight(l.var()) << " from: " << weightLits() << std::endl;
+	//std::cout << "Before: " << weightLits() << " >= " << pbc_->bound() << std::endl;
 	assert(initialized());
 
 	assert(pbc_->undo_ == 0 && "the constraint is not integrated into a solver yet");
@@ -577,8 +578,8 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	if (!(weight(l.var()) && sign(l.var()) == (~l).sign())) {
 		eliminator_.reset();
 		PBConstraint::buildPBConstraint(eliminator_, s, l, s.reason(l));
-		std::cout << eliminator_ << std::endl;
-		std::cout << "var does not exist " << ~l << " " << weightLits() << std::endl;
+		//std::cout << eliminator_ << std::endl;
+		//std::cout << "var does not exist " << ~l << " " << weightLits() << std::endl;
 		return;
 	}
 
@@ -600,7 +601,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		 (static_cast<wsum_t>(maxWeight())*mel > static_cast<wsum_t>(UINT32_MAX / 4) )){
 		// we can't guarantee that the added values do not overflow!
 		// this is a really crude version of overflow handling
-		std::cout << "Weaken" << weightLits() << std::endl;
+		//std::cout << "Weaken" << weightLits() << std::endl;
 		weaken(s);
 		mag = 1;
 		mel = eliminator_.weight(l);
@@ -608,7 +609,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	if ((eliminator_.bound_ > static_cast<wsum_t>(UINT64_MAX / 4)/mag )  ||
 		(pbc_->slack_ > (std::numeric_limits<wsum_t>::max() / mag) / 2)       ||
 		(static_cast<wsum_t>(eliminator_.lits_[0].second)*mag > static_cast<wsum_t>(UINT32_MAX / 4) )){
-		std::cout << "Weaken" << eliminator_ << std::endl;
+		//std::cout << "Weaken" << eliminator_ << std::endl;
 		eliminator_.weaken(s,l);
 		mel = 1;
 		mag = weight(~l);
@@ -616,14 +617,14 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 
 	// TODO: From thesis: "Checks if the sum of the slacks is negative and applies weakening if it is not"
 	if (mag*eliminator_.slack_ + mel*pbc_->slack_ >= 0 ){
-		std::cout << "Weaken" << weightLits() << " ";
+		//std::cout << "Weaken" << weightLits() << " ";
 		eliminator_.weaken(s,l);
 		mel= 1;
 		mag= weight(~l);
-		std::cout << "to" << weightLits();
+		//std::cout << "to" << weightLits();
 	}
 
-	std::cout << "Eliminator: " << eliminator_ << " mag: " << mag << " mel: " << mel << " mgcd: " << mgcd << " " << std::endl;
+	//std::cout << "Eliminator: " << eliminator_ << " mag: " << mag << " mel: " << mel << " mgcd: " << mgcd << " " << std::endl;
 
 	bool mult= multiply(mel);
 	assert( mult );
@@ -634,7 +635,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 	pbc_->bound_ += eliminator_.bound_;
 	pbc_->slack_ += eliminator_.slack_;
 
-	std::cout << "Before elimination: " << weightLits() << " >= " << pbc_->bound() << std::endl;
+	//std::cout << "Before elimination: " << weightLits() << " >= " << pbc_->bound() << std::endl;
 
 	// cutting planes inference
 	for (LitVec::size_type i = 0; i < eliminator_.size(); ++i) {
@@ -645,12 +646,12 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		assert(w > 0);
 		if (!weight(lit.var())) {
 			// new variable
-			std::cout << "Added " << lit << std::endl;
+			//std::cout << "Added " << lit << std::endl;
 			vars_.push_back(v);
 			weights_[v] = w;
 			signs_[v] = lit.sign();
 		} else {
-			std::cout << "Found " << lit << std::endl;
+			//std::cout << "Found " << lit << std::endl;
 			// found variable in pbc
 
 			if (lit.sign() == sign(lit)) {
@@ -673,7 +674,7 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 					weights_[v] = -weight(v);
 					pbc_->bound_ += weight(v);
 				} else if (weight(v) == 0) {
-					std::cout << "Eliminated " << lit << std::endl;
+					//std::cout << "Eliminated " << lit << std::endl;
 					VarDeque::iterator it = std::find(vars_.begin(), vars_.end(), v);
 					vars_.erase(it);
 					continue;
@@ -703,16 +704,16 @@ void PBCAggregator::varElimination(Solver &s, Literal l)
 		}
 	}
 
-	std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
+	//std::cout << "After: " << weightLits() << " >= " << pbc_->bound() <<  std::endl;
 
-	std::cout << "calculated: " << calculateSlack(s) << " set: " << pbc_->slack() << std::endl;
+	//std::cout << "calculated: " << calculateSlack(s) << " set: " << pbc_->slack() << std::endl;
 	//pbc_->slack_ = pbc_->calculateSlack(s);
 	//if (size())
 	//	assert(calculateSlack(s) == pbc_->slack());
 
 	assert(pbc_->slack_ < 0 && "the constraint should still be violated");
 
-	std::cout << "===========" << std::endl;
+	//std::cout << "===========" << std::endl;
 }
 
 PBConstraint *PBCAggregator::finalize(Solver &s)
@@ -721,15 +722,15 @@ PBConstraint *PBCAggregator::finalize(Solver &s)
 
 	pbc_->lits_.clear();
 	weightLits(pbc_->lits_);
-	std::cout << "===========\nFinalize: " << *pbc_ << std::endl;
+	//std::cout << "===========\nFinalize: " << *pbc_ << std::endl;
 	pbc_->canonicalize(s);
 	pbc_->slack_ = pbc_->slack();
-	std::cout << "Canonicalized: " << *pbc_ << std::endl;
+	//std::cout << "Canonicalized: " << *pbc_ << std::endl;
 	// TODO: Think about this: Why can we not use the previous slack? Does it matter?
 	//assert(pbc_->calculateSlack(s) == pbc_->slack());
 	PBConstraint* p = pbc_;
 	pbc_ = NULL;
-	std::cout << "++++++++++++++" << std::endl;
+	//std::cout << "++++++++++++++" << std::endl;
 	return p;
 }
 
@@ -788,7 +789,7 @@ void PBCAggregator::setPBC(PBConstraint *pbc) {
 	reset();
 	assert(!initialized());
 
-	std::cout << "Initialize with: " << *pbc << std::endl;
+	//std::cout << "Initialize with: " << *pbc << std::endl;
 
 	pbc_ = pbc;
 
@@ -802,7 +803,7 @@ void PBCAggregator::setPBC(PBConstraint *pbc) {
 		assert(sign(v) == pbc_->lit(i).sign());
 	}
 
-	std::cout << "WeightLits: " << weightLits() << std::endl;
+	//std::cout << "WeightLits: " << weightLits() << std::endl;
 }
 
 
