@@ -20,6 +20,7 @@
 #include <clasp/solver.h>
 #include <clasp/clause.h>
 #include <clasp/pb_constraint.h>
+#include <clasp/util/streamhelper.h>
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4996) // 'std::copy': Function call with parameters that may be unsafe
@@ -917,7 +918,10 @@ uint32 Solver::analyzeConflict() {
 		// an earlier elimination might have removed this already!
 		if (cpAnalysis && aggregator_->weight(~p) > 0){
 			assert(aggregator_ != 0);
+            std::cout << "Before: " << *aggregator_ << std::endl;
+            std::cout << "Eliminate: " << ~p << std::endl;
 			aggregator_->varElimination(*this, p);
+            std::cout << "After: " << *aggregator_ << std::endl;
 		}
 		reason(p, conflict_);
 	}
